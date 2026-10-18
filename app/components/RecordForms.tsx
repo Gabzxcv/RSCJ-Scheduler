@@ -2,8 +2,9 @@
 
 import { useActionState } from "react";
 import { createDriverAction, createVehicleAction } from "@/app/actions/records";
+import type { ActionState } from "@/lib/types";
 
-const initialState = {};
+const initialState: ActionState = {};
 
 export function DriverCreateForm() {
   const [state, action, pending] = useActionState(createDriverAction, initialState);

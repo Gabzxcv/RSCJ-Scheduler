@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import type { Driver, DriverAvailability, Trip, TripStatus, Vehicle } from "@/lib/types";
 import { localDateTimeToIso, toDateTimeLocal } from "@/lib/time";
-import { saveTripAction, type ActionState } from "@/app/actions/trips";
+import { saveTripAction } from "@/app/actions/trips";
+import type { ActionState } from "@/lib/types";
 
 const initialState: ActionState = {};
 const labels: Record<string, string> = { scheduled: "Scheduled", confirmed: "Confirmed", in_progress: "In progress", completed: "Completed", cancelled: "Cancelled" };

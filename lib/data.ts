@@ -15,9 +15,10 @@ export async function loadTrips(supabase: SupabaseClient, limit = 1000) {
   if (assignments.error) throw new Error(assignments.error.message);
   if (profiles.error) throw new Error(profiles.error.message);
   const driversByTrip = new Map<string, Trip["drivers"]>();
-  for (const row of (assignments.data ?? []) as unknown as Array<{ trip_id: string; driver: Pick<Driver, "id" | "full_name" | "phone"> | null }>) {
-    if (!row.driver) continue;
-    driversByTrip.set(row.trip_id, [...(driversByTrip.get(row.trip_id) ?? []), row.driver]);
+  for (const row of (assignments.data ?? []) as unknown as Array<{ trip_id: string; driver: Pick<Driver, "id" | "full_name" | "phone"> | Pick<Driver, "id" | "full_name" | "phone">[] | null }>) {
+    const assignedDrivers = Array.isArray(row.driver) ? row.driver : row.driver ? [row.driver] : [];
+    if (!assignedDrivers.length) continue;
+    driversByTrip.set(row.trip_id, [...(driversByTrip.get(row.trip_id) ?? []), ...assignedDrivers]);
   }
   const people = new Map((profiles.data ?? []).map((p: { id: string; display_name: string; email: string }) => [p.id, { display_name: p.display_name, email: p.email }]));
   return trips.map((trip) => ({
@@ -39,7 +40,12 @@ export async function loadTripById(supabase: SupabaseClient, id: string) {
   ]);
   if (assignmentResult.error) throw new Error(assignmentResult.error.message);
   if (profileResult.error) throw new Error(profileResult.error.message);
-  const drivers = (assignmentResult.data ?? []).flatMap((row: { driver: Pick<Driver, "id" | "full_name" | "phone"> | null }) => row.driver ? [row.driver] : []);
+  const assignmentRows = (assignmentResult.data ?? []) as unknown as Array<{
+    driver: Pick<Driver, "id" | "full_name" | "phone"> | Pick<Driver, "id" | "full_name" | "phone">[] | null;
+  }>;
+  const drivers = assignmentRows.flatMap(({ driver }) =>
+    Array.isArray(driver) ? driver : driver ? [driver] : []
+  );
   const people = new Map((profileResult.data ?? []).map((person: { id: string; display_name: string; email: string }) => [person.id, { display_name: person.display_name, email: person.email }]));
   return { ...trip, drivers, creator: people.get(trip.created_by) ?? null, editor: people.get(trip.updated_by) ?? null } as Trip;
 }

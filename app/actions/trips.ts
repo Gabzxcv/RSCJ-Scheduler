@@ -2,11 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { TripStatus } from "@/lib/types";
+import type { ActionState, TripStatus } from "@/lib/types";
 import { requireProfile } from "@/lib/auth";
 import { isValidLocalDateTime, localDateTimeToIso } from "@/lib/time";
-
-export type ActionState = { error?: string; success?: string };
 
 const statuses: TripStatus[] = ["scheduled", "confirmed", "in_progress", "completed", "cancelled"];
 const read = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();

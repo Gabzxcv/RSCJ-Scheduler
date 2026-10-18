@@ -1,5 +1,6 @@
 export type Role = "boss" | "secretary";
 export type TripStatus = "scheduled" | "confirmed" | "in_progress" | "completed" | "cancelled";
+export type ActionState = { error?: string; success?: string };
 
 export type Profile = {
   id: string;

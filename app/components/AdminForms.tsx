@@ -2,8 +2,9 @@
 
 import { useActionState } from "react";
 import { inviteWorkspaceUserAction, updateSettingsAction } from "@/app/actions/records";
+import type { ActionState } from "@/lib/types";
 
-const empty = {};
+const empty: ActionState = {};
 const zones = ["Asia/Manila", "Asia/Singapore", "Asia/Hong_Kong", "Asia/Tokyo", "Australia/Sydney", "UTC", "Europe/London", "America/Los_Angeles", "America/New_York"];
 
 export function SettingsForm({ businessName, timezone }: { businessName: string; timezone: string }) {

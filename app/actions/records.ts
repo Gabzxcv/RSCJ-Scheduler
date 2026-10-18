@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { isValidLocalDateTime, localDateTimeToIso } from "@/lib/time";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { ActionState } from "@/app/actions/trips";
+import type { ActionState } from "@/lib/types";
 
 const value = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
 
