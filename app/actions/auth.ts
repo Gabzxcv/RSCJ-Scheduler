@@ -13,6 +13,19 @@ export async function signInAction(formData: FormData) {
   redirect("/");
 }
 
+export async function forgotPasswordAction(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const supabase = await createClient();
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${baseUrl}/auth/confirm?next=/set-password`,
+    });
+  }
+  // Show the same result for known and unknown addresses.
+  redirect("/forgot-password?sent=1");
+}
+
 export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();

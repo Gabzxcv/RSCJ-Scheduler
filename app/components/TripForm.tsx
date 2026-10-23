@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import type { Driver, DriverAvailability, Trip, TripStatus, Vehicle } from "@/lib/types";
 import { localDateTimeToIso, toDateTimeLocal } from "@/lib/time";
 import { saveTripAction } from "@/app/actions/trips";
@@ -26,6 +26,21 @@ export function TripForm({ trip, copyMode = false, drivers, vehicles, trips, ava
   const [startLocal, setStartLocal] = useState(copyMode ? "" : toDateTimeLocal(trip?.starts_at, timezone));
   const [returnLocal, setReturnLocal] = useState(copyMode ? "" : toDateTimeLocal(trip?.estimated_return_at, timezone));
   const [passengers, setPassengers] = useState(trip?.passenger_count ?? 1);
+  const restoredValues = state.values ?? {};
+  const restored = (name: string, fallback = "") => typeof restoredValues[name] === "string" ? restoredValues[name] as string : fallback;
+
+  useEffect(() => {
+    const values = state.values;
+    if (!values) return;
+    const asText = (name: string) => typeof values[name] === "string" ? values[name] as string : "";
+    const driverValue = values.driver_ids;
+    setDriverIds(Array.isArray(driverValue) ? driverValue : typeof driverValue === "string" && driverValue ? [driverValue] : []);
+    setVehicleId(asText("vehicle_id"));
+    setStatus((asText("status") || "scheduled") as TripStatus);
+    setStartLocal(asText("starts_at_local"));
+    setReturnLocal(asText("estimated_return_local"));
+    setPassengers(Number.parseInt(asText("passenger_count") || "1", 10) || 1);
+  }, [state.values]);
   const warnings = useMemo(() => {
     if (!startLocal || !returnLocal || !driverIds.length || !vehicleId || !["scheduled", "confirmed", "in_progress"].includes(status)) return [];
     const start = new Date(localDateTimeToIso(startLocal, timezone)).getTime();
@@ -45,15 +60,15 @@ export function TripForm({ trip, copyMode = false, drivers, vehicles, trips, ava
 
   const canAssignVehicle = vehicles.some((vehicle) => vehicle.service_status === "available");
   const activeDrivers = drivers.filter((driver) => driver.employment_status === "active");
-  return <form action={formAction} className="trip-form">
+  return <form key={JSON.stringify(state.values ?? {})} action={formAction} className="trip-form">
     {trip?.id && <input type="hidden" name="trip_id" value={trip.id} />}
     {copyMode && <div className="notice info"><b>Trip copied.</b> Set a new departure and return time, then review the assignments.</div>}
     {(state.error || warnings.length > 0) && <div className={`notice ${state.error ? "error" : "warning"}`} role="alert"><b>{state.error ? "Could not save this trip" : "Check the schedule"}</b><ul>{state.error && <li>{state.error}</li>}{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div>}
     <section className="form-section"><div className="form-section-head"><span className="form-step">01</span><div><h2>Trip details</h2><p>Where you’re going and who you’re taking.</p></div></div><div className="form-grid two-col">
-      <label>Pickup location <span className="required">*</span><input name="pickup_location" defaultValue={trip?.pickup_location} placeholder="e.g. Makati office" required /></label>
-      <label>Destination <span className="required">*</span><input name="destination" defaultValue={trip?.destination} placeholder="e.g. Batangas Port" required /></label>
-      <label>Client or passenger lead<input name="client_name" defaultValue={trip?.client_name} placeholder="Name or company" /></label>
-      <label>Contact number<input name="client_phone" type="tel" defaultValue={trip?.client_phone} placeholder="09xx xxx xxxx" /></label>
+      <label>Pickup location <span className="required">*</span><input name="pickup_location" autoComplete="street-address" enterKeyHint="next" defaultValue={restored("pickup_location", trip?.pickup_location ?? "")} placeholder="e.g. Makati office" required /></label>
+      <label>Destination <span className="required">*</span><input name="destination" enterKeyHint="next" defaultValue={restored("destination", trip?.destination ?? "")} placeholder="e.g. Batangas Port" required /></label>
+      <label>Client or passenger lead<input name="client_name" autoComplete="name" enterKeyHint="next" defaultValue={restored("client_name", trip?.client_name ?? "")} placeholder="Name or company" /></label>
+      <label>Contact number<input name="client_phone" type="tel" autoComplete="tel" enterKeyHint="next" defaultValue={restored("client_phone", trip?.client_phone ?? "")} placeholder="09xx xxx xxxx" /></label>
       <label>Passenger count<input name="passenger_count" type="number" min="1" max="100" value={passengers} onChange={(event) => setPassengers(Number(event.target.value) || 1)} required /></label>
       <label>Trip status<select name="status" value={status} onChange={(event) => setStatus(event.target.value as TripStatus)}>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     </div></section>
@@ -67,8 +82,8 @@ export function TripForm({ trip, copyMode = false, drivers, vehicles, trips, ava
     </section>
 
     <section className="form-section"><div className="form-section-head"><span className="form-step">03</span><div><h2>Notes and requirements</h2><p>Share details the team needs before departure.</p></div></div><div className="form-grid two-col">
-      <label>Special requirements<textarea name="special_requirements" defaultValue={trip?.special_requirements} placeholder="Accessibility, luggage, child seats…" rows={3} /></label>
-      <label>Internal notes<textarea name="notes" defaultValue={trip?.notes} placeholder="Anything the office or drivers should know" rows={3} /></label>
+      <label>Special requirements<textarea name="special_requirements" defaultValue={restored("special_requirements", trip?.special_requirements ?? "")} placeholder="Accessibility, luggage, child seats…" rows={3} /></label>
+      <label>Internal notes<textarea name="notes" defaultValue={restored("notes", trip?.notes ?? "")} placeholder="Anything the office or drivers should know" rows={3} /></label>
     </div></section>
     <div className="form-actions"><Link className="button secondary" href={trip?.id ? `/trips/${trip.id}` : "/schedule"}>Cancel</Link><button className="button primary" type="submit" disabled={pending}>{pending ? "Saving…" : trip?.id ? "Save changes" : "Save trip"}<span aria-hidden="true">→</span></button></div>
   </form>;

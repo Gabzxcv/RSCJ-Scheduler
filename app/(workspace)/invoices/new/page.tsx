@@ -12,7 +12,7 @@ export default async function NewInvoicePage({ searchParams }: { searchParams: P
   const [params, trips, settings] = await Promise.all([
     searchParams,
     loadTrips(supabase, 500),
-    supabase.from("app_settings").select("timezone").eq("singleton", true).maybeSingle(),
+    supabase.from("app_settings").select("timezone,payment_details").eq("singleton", true).maybeSingle(),
   ]);
   const invoiceTrips: InvoiceTrip[] = trips.map((trip) => ({
     id: trip.id,
@@ -27,6 +27,6 @@ export default async function NewInvoicePage({ searchParams }: { searchParams: P
   return <>
     <div className="breadcrumbs"><Link href="/invoices">Invoices</Link><span>›</span><span>New invoice</span></div>
     <div className="page-heading form-page-heading"><div><p className="eyebrow">BILLING</p><h1>Create an invoice</h1><p className="muted">Add the client, due date, and trip charge. You can print the invoice after saving.</p></div></div>
-    <div className="panel invoice-form-panel"><InvoiceForm trips={invoiceTrips} selectedTrip={selectedTrip} today={today} /></div>
+    <div className="panel invoice-form-panel"><InvoiceForm trips={invoiceTrips} selectedTrip={selectedTrip} today={today} paymentDetails={settings.data?.payment_details ?? ""} /></div>
   </>;
 }

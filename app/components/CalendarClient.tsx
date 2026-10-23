@@ -1,19 +1,56 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import type { Driver, DriverAvailability, Trip, Vehicle } from "@/lib/types";
 import { dateKey, dateKeyToUtc, dateLabel, formatTime, localDateTimeToIso, monthTitle, shiftDateKey } from "@/lib/time";
 
 type ViewMode = "day" | "week" | "month";
 const statusNames: Record<string, string> = { scheduled: "Scheduled", confirmed: "Confirmed", in_progress: "In progress", completed: "Completed", cancelled: "Cancelled" };
 
-export function CalendarClient({ trips, drivers, vehicles, availability, timezone }: { trips: Trip[]; drivers: Driver[]; vehicles: Vehicle[]; availability: DriverAvailability[]; timezone: string }) {
-  const [mode, setMode] = useState<ViewMode>("day");
-  const [selectedDate, setSelectedDate] = useState(() => dateKey(new Date(), timezone));
-  const [driverFilter, setDriverFilter] = useState("all");
-  const [vehicleFilter, setVehicleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+export function CalendarClient({ trips, drivers, vehicles, availability, timezone, initialMode = "day", initialDate, initialDriverFilter = "all", initialVehicleFilter = "all", initialStatusFilter = "all" }: {
+  trips: Trip[]; drivers: Driver[]; vehicles: Vehicle[]; availability: DriverAvailability[]; timezone: string;
+  initialMode?: ViewMode; initialDate?: string; initialDriverFilter?: string; initialVehicleFilter?: string; initialStatusFilter?: string;
+}) {
+  const router = useRouter();
+  const [mode, setMode] = useState<ViewMode>(initialMode);
+  const [selectedDate, setSelectedDate] = useState(() => initialDate || dateKey(new Date(), timezone));
+  const [driverFilter, setDriverFilter] = useState(initialDriverFilter);
+  const [vehicleFilter, setVehicleFilter] = useState(initialVehicleFilter);
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
+  useEffect(() => {
+    const query = new URLSearchParams({ view: mode, date: selectedDate });
+    if (driverFilter !== "all") query.set("driver", driverFilter);
+    if (vehicleFilter !== "all") query.set("vehicle", vehicleFilter);
+    if (statusFilter !== "all") query.set("status", statusFilter);
+    const destination = `/schedule?${query.toString()}`;
+    if (`${window.location.pathname}${window.location.search}` !== destination) router.replace(destination, { scroll: false });
+  }, [router, mode, selectedDate, driverFilter, vehicleFilter, statusFilter]);
+  useEffect(() => {
+    function restoreFromUrl() {
+      const query = new URLSearchParams(window.location.search);
+      const view = query.get("view");
+      if (view === "day" || view === "week" || view === "month") setMode(view);
+      const date = query.get("date");
+      if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) setSelectedDate(date);
+      setDriverFilter(query.get("driver") || "all");
+      setVehicleFilter(query.get("vehicle") || "all");
+      setStatusFilter(query.get("status") || "all");
+    }
+    window.addEventListener("popstate", restoreFromUrl);
+    return () => window.removeEventListener("popstate", restoreFromUrl);
+  }, []);
+  useEffect(() => {
+    let lastRefresh = Date.now();
+    function refreshWhenVisible() {
+      if (document.visibilityState !== "visible" || Date.now() - lastRefresh < 30_000) return;
+      lastRefresh = Date.now();
+      router.refresh();
+    }
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => document.removeEventListener("visibilitychange", refreshWhenVisible);
+  }, [router]);
   const visibleTrips = useMemo(() => trips.filter((trip) => {
     if (driverFilter !== "all" && !trip.drivers?.some((driver) => driver.id === driverFilter)) return false;
     if (vehicleFilter !== "all" && trip.vehicle_id !== vehicleFilter) return false;
@@ -35,6 +72,7 @@ export function CalendarClient({ trips, drivers, vehicles, availability, timezon
   const inCurrentMonth = (key: string) => key.slice(0, 7) === selectedDate.slice(0, 7);
   const heading = mode === "month" ? monthTitle(selectedDate) : mode === "day" ? dateLabel(selectedDate, { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : `${dateLabel(dayKeys[0], { month: "short", day: "numeric" })} – ${dateLabel(dayKeys[6], { month: "short", day: "numeric", year: "numeric" })}`;
   const scheduleTrips = visibleTrips.filter((trip) => mode === "month" || dayKeys.includes(dateKey(trip.starts_at, timezone)));
+  const agendaDays = mode === "month" ? dayKeys.filter((key) => inCurrentMonth(key) && (key === selectedDate || scheduleTrips.some((trip) => dateKey(trip.starts_at, timezone) === key))) : dayKeys;
   const assignedOnSelected = new Set(visibleTrips.filter((trip) => dateKey(trip.starts_at, timezone) === selectedDate && trip.status !== "cancelled").flatMap((trip) => (trip.drivers ?? []).map((driver) => driver.id)));
   const selectedDayStart = new Date(localDateTimeToIso(`${selectedDate}T00:00`, timezone)).getTime();
   const selectedDayEnd = new Date(localDateTimeToIso(`${shiftDateKey(selectedDate, 1)}T00:00`, timezone)).getTime();
@@ -71,7 +109,7 @@ export function CalendarClient({ trips, drivers, vehicles, availability, timezon
       <div className="calendar-controls"><div className="view-switch" role="group" aria-label="Calendar view">{(["day", "week", "month"] as const).map((view) => <button key={view} className={mode === view ? "selected" : ""} onClick={() => setMode(view)}>{view[0].toUpperCase() + view.slice(1)}</button>)}</div><button className="icon-button calendar-arrow" onClick={() => move(-1)} aria-label="Previous period">←</button><button className="button secondary today-button" onClick={() => setSelectedDate(dateKey(new Date(), timezone))}>Today</button><button className="icon-button calendar-arrow" onClick={() => move(1)} aria-label="Next period">→</button><h2 className="calendar-period">{heading}</h2></div>
       <div className="filter-row"><label className="filter-select"><span>Driver</span><select value={driverFilter} onChange={(event) => setDriverFilter(event.target.value)}><option value="all">All drivers</option>{drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.full_name}</option>)}</select></label><label className="filter-select"><span>Vehicle</span><select value={vehicleFilter} onChange={(event) => setVehicleFilter(event.target.value)}><option value="all">All vehicles</option>{vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.label} · {vehicle.plate_number}</option>)}</select></label><label className="filter-select"><span>Status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All statuses</option>{Object.entries(statusNames).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>{hasFilters && <button className="clear-filter" onClick={() => { setDriverFilter("all"); setVehicleFilter("all"); setStatusFilter("all"); }}>Clear filters</button>}<div className="toolbar-spacer" /><button className="button secondary action-button" onClick={exportCsv}>↓ <span>Download</span></button><button className="button secondary action-button" onClick={() => window.print()}>▧ <span>Print</span></button></div>
     </section>
-    <section className={`calendar-surface panel ${mode === "month" ? "month-surface" : ""}`}>
+    <section className={`calendar-surface panel ${mode === "month" ? "month-surface" : ""} ${mode !== "day" ? "mobile-agenda-surface" : ""}`}>
       {mode === "month" ? <div className="month-grid"><div className="month-weekdays">{["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((day) => <span key={day}>{day}</span>)}</div><div className="month-days">{dayKeys.map((key) => {
         const dayTrips = scheduleTrips.filter((trip) => dateKey(trip.starts_at, timezone) === key);
         const dayNumber = Number(key.slice(-2));
@@ -82,6 +120,13 @@ export function CalendarClient({ trips, drivers, vehicles, availability, timezon
           return <div key={key} className={`period-column ${key === dateKey(new Date(), timezone) ? "is-today" : ""}`}><button className="period-column-heading" onClick={() => { setSelectedDate(key); setMode("day"); }}><span>{dateLabel(key, { weekday: "short" }).slice(0, 3).toUpperCase()}</span><b>{Number(key.slice(-2))}</b></button>{dayTrips.length ? dayTrips.map((trip) => <TripCard key={trip.id} trip={trip} timezone={timezone} compact={mode === "week"} />) : <button className="empty-day" onClick={() => window.location.assign(`/trips/new?date=${key}`)}>＋<span>Plan a trip</span></button>}</div>;
         })}
       </div>}
+      {mode !== "day" && <div className="mobile-agenda">{agendaDays.map((key) => {
+        const dayTrips = scheduleTrips.filter((trip) => dateKey(trip.starts_at, timezone) === key);
+        return <section className="mobile-agenda-day" key={key}>
+          <button className="mobile-agenda-heading" onClick={() => { setSelectedDate(key); setMode("day"); }}><span>{dateLabel(key, { weekday: "long", month: "short", day: "numeric" })}</span><b>{dayTrips.length} {dayTrips.length === 1 ? "trip" : "trips"}</b></button>
+          {dayTrips.length ? dayTrips.map((trip) => <TripCard key={trip.id} trip={trip} timezone={timezone} compact={false} />) : <Link className="mobile-agenda-empty" href={`/trips/new?date=${key}`}>＋ Plan a trip for this day</Link>}
+        </section>;
+      })}</div>}
     </section>
     {mode === "day" && <section className="panel availability-panel"><div className="panel-heading"><div><p className="eyebrow">TEAM AVAILABILITY</p><h2>{dateLabel(selectedDate, { month: "short", day: "numeric" })}</h2></div><Link className="text-link" href="/drivers">Manage time off →</Link></div><div className="availability-roster">{drivers.filter((driver) => driver.employment_status === "active").map((driver) => <div className="availability-chip" key={driver.id}><span className={`status-dot ${offToday.has(driver.id) ? "offline" : assignedOnSelected.has(driver.id) ? "busy" : "online"}`} /><b>{driver.full_name}</b><span>{offToday.has(driver.id) ? "Off duty" : assignedOnSelected.has(driver.id) ? "Assigned" : "Available"}</span></div>)}</div></section>}
     <div className="calendar-legend"><span><i className="legend scheduled" /> Scheduled</span><span><i className="legend confirmed" /> Confirmed</span><span><i className="legend in_progress" /> In progress</span><span><i className="legend completed" /> Completed</span><span><i className="legend cancelled" /> Cancelled</span></div>

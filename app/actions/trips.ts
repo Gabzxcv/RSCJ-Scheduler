@@ -8,9 +8,18 @@ import { isValidLocalDateTime, localDateTimeToIso } from "@/lib/time";
 
 const statuses: TripStatus[] = ["scheduled", "confirmed", "in_progress", "completed", "cancelled"];
 const read = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
+const tripFields = ["trip_id", "client_name", "client_phone", "pickup_location", "destination", "starts_at_local", "estimated_return_local", "passenger_count", "vehicle_id", "status", "notes", "special_requirements"] as const;
+
+function submittedTripValues(formData: FormData) {
+  return {
+    ...Object.fromEntries(tripFields.map((key) => [key, read(formData, key)])),
+    driver_ids: formData.getAll("driver_ids").map(String),
+  };
+}
 
 export async function saveTripAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const { supabase } = await requireProfile(["boss", "secretary"]);
+  const values = submittedTripValues(formData);
   const { data: settings } = await supabase.from("app_settings").select("timezone").eq("singleton", true).maybeSingle();
   const timezone = settings?.timezone || "Asia/Manila";
   const id = read(formData, "trip_id") || null;
@@ -19,13 +28,13 @@ export async function saveTripAction(_previous: ActionState, formData: FormData)
   const driverIds = formData.getAll("driver_ids").map(String).filter(Boolean);
   const status = read(formData, "status") as TripStatus;
   const passengers = Number.parseInt(read(formData, "passenger_count") || "1", 10);
-  if (!read(formData, "pickup_location") || !read(formData, "destination")) return { error: "Enter both a pickup location and destination." };
-  if (!isValidLocalDateTime(startsLocal) || !isValidLocalDateTime(returnLocal)) return { error: "Enter a valid departure and return date and time." };
-  if (startsLocal >= returnLocal) return { error: "Estimated return must be later than departure." };
-  if (!driverIds.length) return { error: "Assign at least one active driver." };
-  if (!read(formData, "vehicle_id")) return { error: "Choose a vehicle." };
-  if (!Number.isFinite(passengers) || passengers < 1) return { error: "Passenger count must be at least one." };
-  if (!statuses.includes(status)) return { error: "Choose a valid trip status." };
+  if (!read(formData, "pickup_location") || !read(formData, "destination")) return { error: "Enter both a pickup location and destination.", values };
+  if (!isValidLocalDateTime(startsLocal) || !isValidLocalDateTime(returnLocal)) return { error: "Enter a valid departure and return date and time.", values };
+  if (startsLocal >= returnLocal) return { error: "Estimated return must be later than departure.", values };
+  if (!driverIds.length) return { error: "Assign at least one active driver.", values };
+  if (!read(formData, "vehicle_id")) return { error: "Choose a vehicle.", values };
+  if (!Number.isFinite(passengers) || passengers < 1) return { error: "Passenger count must be at least one.", values };
+  if (!statuses.includes(status)) return { error: "Choose a valid trip status.", values };
 
   let startsAt: string;
   let estimatedReturnAt: string;
@@ -33,7 +42,7 @@ export async function saveTripAction(_previous: ActionState, formData: FormData)
     startsAt = localDateTimeToIso(startsLocal, timezone);
     estimatedReturnAt = localDateTimeToIso(returnLocal, timezone);
   } catch {
-    return { error: "Enter a valid departure and return date and time." };
+    return { error: "Enter a valid departure and return date and time.", values };
   }
   const payload = {
     client_name: read(formData, "client_name"),
@@ -50,7 +59,7 @@ export async function saveTripAction(_previous: ActionState, formData: FormData)
     driver_ids: driverIds,
   };
   const { data: tripId, error } = await supabase.rpc("save_trip", { p_trip_id: id, p_trip: payload });
-  if (error) return { error: error.message.replace(/^CONFLICT:\s*/i, "Schedule conflict: ") };
+  if (error) return { error: error.message.replace(/^CONFLICT:\s*/i, "Schedule conflict: "), values };
   revalidatePath("/");
   revalidatePath("/schedule");
   revalidatePath("/history");
