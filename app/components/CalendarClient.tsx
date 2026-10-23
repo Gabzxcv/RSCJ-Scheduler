@@ -9,7 +9,7 @@ type ViewMode = "day" | "week" | "month";
 const statusNames: Record<string, string> = { scheduled: "Scheduled", confirmed: "Confirmed", in_progress: "In progress", completed: "Completed", cancelled: "Cancelled" };
 
 export function CalendarClient({ trips, drivers, vehicles, availability, timezone }: { trips: Trip[]; drivers: Driver[]; vehicles: Vehicle[]; availability: DriverAvailability[]; timezone: string }) {
-  const [mode, setMode] = useState<ViewMode>("week");
+  const [mode, setMode] = useState<ViewMode>("day");
   const [selectedDate, setSelectedDate] = useState(() => dateKey(new Date(), timezone));
   const [driverFilter, setDriverFilter] = useState("all");
   const [vehicleFilter, setVehicleFilter] = useState("all");

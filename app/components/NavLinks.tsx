@@ -7,6 +7,7 @@ import type { Profile } from "@/lib/types";
 const mainLinks = [
   ["/", "Overview", "⌂"],
   ["/schedule", "Schedule", "▦"],
+  ["/invoices", "Invoices", "＄"],
   ["/drivers", "Drivers", "♙"],
   ["/vehicles", "Vehicles", "▱"],
   ["/history", "Trip history", "◷"],

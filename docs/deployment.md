@@ -2,7 +2,7 @@
 
 ## 1. Configure Supabase
 
-Create a Supabase project, then run `supabase/migrations/001_initial_schema.sql` in the SQL Editor. The migration creates the user profiles, driver and vehicle records, trip assignments, time-off records, settings, role policies, and trip save function.
+Create a Supabase project, then run `supabase/migrations/001_initial_schema.sql` followed by `supabase/migrations/002_invoices.sql` in the SQL Editor. The first migration creates the user profiles, driver and vehicle records, trip assignments, time-off records, settings, role policies, and trip save function. The second adds invoice storage and workspace access policies. For an existing project that already has migration 001, run only migration 002.
 
 Disable public sign-ups in Supabase Auth settings. Create the first user in **Authentication → Users**, then create its boss profile from the SQL Editor:
 
@@ -62,4 +62,5 @@ Treat dumps as sensitive business data. Restrict access, encrypt at rest, and pe
 4. Add vehicles, capacities, and service status.
 5. Invite the secretary and verify they can accept the email, set a password, and sign in.
 6. Create a test trip and verify the assignment, conflict warning, edit history, CSV export, and printed schedule.
-7. Remove the sample rows and add real records.
+7. Run `supabase/migrations/002_invoices.sql` in the production project before using invoices. Do not rerun migration 001 if it has already been applied.
+8. Remove the sample rows and add real records.

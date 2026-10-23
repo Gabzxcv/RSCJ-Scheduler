@@ -1,6 +1,7 @@
 export type Role = "boss" | "secretary";
 export type TripStatus = "scheduled" | "confirmed" | "in_progress" | "completed" | "cancelled";
 export type ActionState = { error?: string; success?: string };
+export type InvoiceStatus = "draft" | "sent" | "paid" | "void";
 
 export type Profile = {
   id: string;
@@ -72,4 +73,26 @@ export type TripHistory = {
   after_data: Record<string, unknown>;
   created_at: string;
   actor?: Pick<Profile, "display_name" | "email"> | null;
+};
+
+export type Invoice = {
+  id: string;
+  invoice_number: string;
+  trip_id: string | null;
+  client_name: string;
+  client_email: string;
+  client_phone: string;
+  billing_address: string;
+  description: string;
+  issued_on: string;
+  due_on: string;
+  amount: number;
+  currency: string;
+  status: InvoiceStatus;
+  notes: string;
+  paid_at: string | null;
+  created_by: string;
+  updated_by: string;
+  created_at: string;
+  updated_at: string;
 };

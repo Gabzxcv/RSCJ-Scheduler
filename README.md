@@ -16,18 +16,19 @@ The application expects a configured Supabase project. It does not fall back to 
 - Password sign-in; boss and secretary roles; boss-only team access, reports, and settings.
 - Day, week, and month schedule views, with driver, vehicle, and status filters.
 - Create, edit, duplicate, cancel, and complete trips; assign multiple drivers and one vehicle.
-- Server-side conflict, driver time-off, service-status, and vehicle-capacity checks before saving.
+- Server-side checks prevent overlapping bookings for a driver or vehicle, including simultaneous saves; driver time-off, service status, and vehicle capacity are checked before saving too.
 - Driver contacts, license and emergency-contact details, and time-off ranges.
 - Vehicle plate, model, capacity, and maintenance status.
 - Trip activity history with the account and timestamp for every create or edit.
 - Search and filter history, export CSV, print daily/weekly/monthly schedules, and export a report.
 - Optional in-app trip reminders and assignment-change notifications.
+- Trip-linked invoices with unique invoice numbers, client billing details, due dates, payment status tracking, and print / save as PDF.
 - Sample drivers, vehicles, and future trips for initial testing.
 - Responsive layout for mobile phones, tablets, and desktop browsers.
 
 ## Run locally
 
-1. Create a Supabase project and run `supabase/migrations/001_initial_schema.sql` in its SQL Editor.
+1. Create a Supabase project and run `supabase/migrations/001_initial_schema.sql`, then `supabase/migrations/002_invoices.sql`, in its SQL Editor. The second migration adds invoice storage and access policies. If your existing project already has the first migration, run only `002_invoices.sql`.
 2. Turn off public sign-ups in Supabase Auth settings. Create the initial boss account in **Authentication → Users**. Because manually created accounts are not invitations, add its workspace profile from the SQL Editor:
 
    ```sql
@@ -73,8 +74,9 @@ The application expects a configured Supabase project. It does not fall back to 
 
 4. Deploy. In Supabase **Authentication → URL Configuration**, set the Site URL to the production Vercel domain and add `http://localhost:3000/**` plus your production app URL to the redirect allow-list. Add Vercel preview URLs only if you plan to sign in on previews. Invitation emails use the Site URL, so set it before inviting the secretary.
 5. Sign in as the boss, set the business name and time zone, add real drivers and vehicles, and invite the secretary.
-6. Remove sample data before entering live operations. The sample rows are labeled and use `SAMPLE-` plates.
-7. If reminders are wanted, set `CRON_SECRET` in Vercel. The included Vercel cron adds an in-app reminder at 7 a.m. Manila time for scheduled or confirmed trips departing in the next 24 hours. Each user can switch reminders on or off in Notifications.
+6. Run `supabase/migrations/002_invoices.sql` in the production Supabase project's SQL Editor before using invoices. If the project already has `001_initial_schema.sql`, do not rerun it.
+7. Remove sample data before entering live operations. The sample rows are labeled and use `SAMPLE-` plates.
+8. If reminders are wanted, set `CRON_SECRET` in Vercel. The included Vercel cron adds an in-app reminder at 7 a.m. Manila time for scheduled or confirmed trips departing in the next 24 hours. Each user can switch reminders on or off in Notifications.
 
 Vercel's current Next.js deployment guide: [vercel.com/docs/frameworks/full-stack/nextjs](https://vercel.com/docs/frameworks/full-stack/nextjs).
 
