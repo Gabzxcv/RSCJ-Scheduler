@@ -95,6 +95,7 @@ npm run dev       # Local development
 npm run typecheck # TypeScript checks
 npm run lint      # ESLint checks
 npm run build     # Production build
+npm run analyze   # Inspect bundles (Next.js 16.1+)
 npm start         # Run the production build locally
 ```
 

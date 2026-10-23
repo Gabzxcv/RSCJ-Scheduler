@@ -43,7 +43,35 @@ The route verifies the invite and sends the new user to `/set-password`. Set the
 
 The app uses dynamic, authenticated server rendering. User and trip data are fetched through the signed-in Supabase session, with authorization enforced again by database policies and the trip save function. `vercel.json` runs the reminder job at 23:00 UTC (7:00 a.m. in Manila); the user preference is controlled in Notifications.
 
-## 4. Backups and recovery
+## 4. Performance and diagnosis
+
+The workspace, schedule, trip, and invoice pages contain signed-in or frequently changing business data, so they stay dynamically rendered. Do not add shared ISR or persistent response caching to these routes: it can serve stale schedule information or mix user-specific data. Next.js and Vercel already serve static assets from the CDN. The server reuses the authenticated profile lookup and settings row during a request, and trip queries fetch the vehicle, assigned drivers, and creator/editor details in the same database request.
+
+### Measure the deployed site
+
+1. In the Vercel project, open **Speed Insights** and select **Enable**. The `@vercel/speed-insights` component is included in the app; deploy once after enabling it, then review Core Web Vitals after real users visit.
+2. In **Observability → Functions**, sort by duration and inspect the slow routes and their logs. The default region for new Vercel projects is `iad1` (Washington, D.C.). Check the Supabase project's configured database region, then set **Project → Settings → Functions → Function Regions** to the same region or the nearest available one. This repository does not hard-code a region because the Supabase deployment region must be checked first.
+3. With Vercel CLI 48.9.0 or later and `httpstat` installed, measure a route from the repository root:
+
+   ```bash
+   vercel httpstat /login
+   vercel httpstat /schedule
+   ```
+
+   Compare DNS, connection, TLS, server processing, and transfer times. The protected `/schedule` route may redirect to login without an app session; use its timing as a rough request measurement, and use Observability for authenticated production requests.
+4. Review recent server function logs when a route is slow:
+
+   ```bash
+   vercel logs --environment production --source serverless --since 1h --expand
+   ```
+
+### Inspect client bundles
+
+Run `npm run analyze` with Next.js 16.1 or newer to open the built-in Turbopack bundle analyzer. Inspect the client import graph, then remove or defer a large package only when the report shows it is contributing to the initial route bundle. Next.js already splits code by route and tree-shakes unused exports.
+
+This app has no public catalog or landing pages that can benefit from SSG/ISR today. If public, non-personalized pages are added later, they can be statically generated while keeping the signed-in workspace dynamic.
+
+## 5. Backups and recovery
 
 Enable the database backup or point-in-time recovery option available for the selected Supabase plan. Before applying schema changes, make a database dump with the Supabase CLI and store it in a protected location outside this repository. For example, after installing and linking the CLI to the project:
 
@@ -54,7 +82,7 @@ npx supabase db dump --linked -f backups/pre-change.sql
 
 Treat dumps as sensitive business data. Restrict access, encrypt at rest, and periodically rehearse restoration to a separate test project. Supabase managed backups and point-in-time recovery availability vary by plan; confirm the retention window in the project's dashboard.
 
-## 5. First-use checklist
+## 6. First-use checklist
 
 1. Sign in as boss.
 2. Open Settings and confirm the business name and time zone.

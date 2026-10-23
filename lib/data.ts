@@ -1,53 +1,66 @@
+import { cache } from "react";
 import type { Driver, DriverAvailability, Trip, Vehicle } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export async function loadTrips(supabase: SupabaseClient, limit = 1000) {
-  const { data: rawTrips, error } = await supabase.from("trips").select("*, vehicle:vehicles(id,label,plate_number,capacity,service_status)").order("starts_at", { ascending: false }).limit(limit);
+type AssignedDriver = Pick<Driver, "id" | "full_name" | "phone">;
+type WorkspacePerson = NonNullable<Trip["creator"]>;
+type RelatedRecord<T> = T | T[] | null;
+type TripWithAssignments = Omit<Trip, "creator" | "editor"> & {
+  assignments?: Array<{ driver: AssignedDriver | AssignedDriver[] | null }>;
+  creator?: RelatedRecord<WorkspacePerson>;
+  editor?: RelatedRecord<WorkspacePerson>;
+};
+
+function flattenAssignedDrivers(rows: TripWithAssignments["assignments"]) {
+  return (rows ?? []).flatMap(({ driver }) =>
+    Array.isArray(driver) ? driver : driver ? [driver] : []
+  );
+}
+
+function firstRelation<T>(value: RelatedRecord<T> | undefined) {
+  return (Array.isArray(value) ? value[0] : value) ?? null;
+}
+
+export const loadWorkspaceSettings = cache(async (supabase: SupabaseClient) => {
+  const { data, error } = await supabase.from("app_settings")
+    .select("business_name,timezone")
+    .eq("singleton", true)
+    .maybeSingle();
   if (error) throw new Error(error.message);
-  const trips = (rawTrips ?? []) as unknown as Array<Trip & { vehicle: Trip["vehicle"] }>;
+  return data;
+});
+
+export async function loadTrips(supabase: SupabaseClient, limit = 1000) {
+  const { data: rawTrips, error } = await supabase.from("trips")
+    .select("*, vehicle:vehicles(id,label,plate_number,capacity,service_status), assignments:trip_drivers(driver:drivers(id,full_name,phone)), creator:profiles!trips_created_by_fkey(display_name,email), editor:profiles!trips_updated_by_fkey(display_name,email)")
+    .order("starts_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  const trips = (rawTrips ?? []) as unknown as Array<TripWithAssignments & { vehicle: Trip["vehicle"] }>;
   if (!trips.length) return [] as Trip[];
-  const ids = trips.map((trip) => trip.id);
-  const profileIds = [...new Set(trips.flatMap((trip) => [trip.created_by, trip.updated_by]))];
-  const [assignments, profiles] = await Promise.all([
-    supabase.from("trip_drivers").select("trip_id,driver:drivers(id,full_name,phone)").in("trip_id", ids),
-    supabase.from("profiles").select("id,display_name,email").in("id", profileIds),
-  ]);
-  if (assignments.error) throw new Error(assignments.error.message);
-  if (profiles.error) throw new Error(profiles.error.message);
-  const driversByTrip = new Map<string, Trip["drivers"]>();
-  for (const row of (assignments.data ?? []) as unknown as Array<{ trip_id: string; driver: Pick<Driver, "id" | "full_name" | "phone"> | Pick<Driver, "id" | "full_name" | "phone">[] | null }>) {
-    const assignedDrivers = Array.isArray(row.driver) ? row.driver : row.driver ? [row.driver] : [];
-    if (!assignedDrivers.length) continue;
-    driversByTrip.set(row.trip_id, [...(driversByTrip.get(row.trip_id) ?? []), ...assignedDrivers]);
-  }
-  const people = new Map((profiles.data ?? []).map((p: { id: string; display_name: string; email: string }) => [p.id, { display_name: p.display_name, email: p.email }]));
-  return trips.map((trip) => ({
+  return trips.map(({ assignments, creator, editor, ...trip }) => ({
     ...trip,
-    drivers: driversByTrip.get(trip.id) ?? [],
-    creator: people.get(trip.created_by) ?? null,
-    editor: people.get(trip.updated_by) ?? null,
+    drivers: flattenAssignedDrivers(assignments),
+    creator: firstRelation(creator),
+    editor: firstRelation(editor),
   }));
 }
 
 export async function loadTripById(supabase: SupabaseClient, id: string) {
-  const { data: rawTrip, error } = await supabase.from("trips").select("*, vehicle:vehicles(id,label,plate_number,capacity,service_status)").eq("id", id).maybeSingle();
+  const { data: rawTrip, error } = await supabase.from("trips")
+    .select("*, vehicle:vehicles(id,label,plate_number,capacity,service_status), assignments:trip_drivers(driver:drivers(id,full_name,phone)), creator:profiles!trips_created_by_fkey(display_name,email), editor:profiles!trips_updated_by_fkey(display_name,email)")
+    .eq("id", id)
+    .maybeSingle();
   if (error) throw new Error(error.message);
   if (!rawTrip) return null;
-  const trip = rawTrip as unknown as Trip;
-  const [assignmentResult, profileResult] = await Promise.all([
-    supabase.from("trip_drivers").select("driver:drivers(id,full_name,phone)").eq("trip_id", id),
-    supabase.from("profiles").select("id,display_name,email").in("id", [trip.created_by, trip.updated_by]),
-  ]);
-  if (assignmentResult.error) throw new Error(assignmentResult.error.message);
-  if (profileResult.error) throw new Error(profileResult.error.message);
-  const assignmentRows = (assignmentResult.data ?? []) as unknown as Array<{
-    driver: Pick<Driver, "id" | "full_name" | "phone"> | Pick<Driver, "id" | "full_name" | "phone">[] | null;
-  }>;
-  const drivers = assignmentRows.flatMap(({ driver }) =>
-    Array.isArray(driver) ? driver : driver ? [driver] : []
-  );
-  const people = new Map((profileResult.data ?? []).map((person: { id: string; display_name: string; email: string }) => [person.id, { display_name: person.display_name, email: person.email }]));
-  return { ...trip, drivers, creator: people.get(trip.created_by) ?? null, editor: people.get(trip.updated_by) ?? null } as Trip;
+  const trip = rawTrip as unknown as TripWithAssignments;
+  const { assignments, creator, editor, ...tripData } = trip;
+  return {
+    ...tripData,
+    drivers: flattenAssignedDrivers(assignments),
+    creator: firstRelation(creator),
+    editor: firstRelation(editor),
+  } as Trip;
 }
 
 export async function loadDrivers(supabase: SupabaseClient) {
@@ -63,12 +76,18 @@ export async function loadVehicles(supabase: SupabaseClient) {
 }
 
 export async function loadAvailability(supabase: SupabaseClient) {
-  const { data, error } = await supabase.from("driver_availability").select("*").gte("ends_at", new Date().toISOString()).order("starts_at").limit(300);
+  const { data, error } = await supabase.from("driver_availability")
+    .select("*, driver:drivers(full_name)")
+    .gte("ends_at", new Date().toISOString())
+    .order("starts_at")
+    .limit(300);
   if (error) throw new Error(error.message);
-  const records = (data ?? []) as DriverAvailability[];
-  const ids = [...new Set(records.map((item) => item.driver_id))];
-  if (!ids.length) return records;
-  const { data: drivers } = await supabase.from("drivers").select("id,full_name").in("id", ids);
-  const names = new Map((drivers ?? []).map((driver: { id: string; full_name: string }) => [driver.id, driver.full_name]));
-  return records.map((item) => ({ ...item, driver: { full_name: names.get(item.driver_id) ?? "Driver" } }));
+  type AvailabilityRow = Omit<DriverAvailability, "driver"> & {
+    driver?: RelatedRecord<Pick<Driver, "full_name">>;
+  };
+  const records = (data ?? []) as unknown as AvailabilityRow[];
+  return records.map(({ driver, ...record }) => ({
+    ...record,
+    driver: firstRelation(driver) ?? { full_name: "Driver" },
+  })) as DriverAvailability[];
 }
