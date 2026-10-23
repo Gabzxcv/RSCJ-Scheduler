@@ -1,8 +1,7 @@
 export type Role = "boss" | "secretary";
 export type TripStatus = "scheduled" | "confirmed" | "in_progress" | "completed" | "cancelled";
-export type ActionState = { error?: string; success?: string; values?: Record<string, string | string[]> };
+export type ActionState = { error?: string; success?: string };
 export type InvoiceStatus = "draft" | "sent" | "paid" | "void";
-export type InvoiceLineItem = { description: string; quantity: number; unit_price: number; total: number };
 
 export type Profile = {
   id: string;
@@ -85,14 +84,12 @@ export type Invoice = {
   client_phone: string;
   billing_address: string;
   description: string;
-  line_items?: InvoiceLineItem[];
   issued_on: string;
   due_on: string;
   amount: number;
   currency: string;
   status: InvoiceStatus;
   notes: string;
-  payment_details?: string;
   paid_at: string | null;
   created_by: string;
   updated_by: string;

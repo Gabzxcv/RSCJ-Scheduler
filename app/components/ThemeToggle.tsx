@@ -8,15 +8,15 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
-    const initialTheme: Theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+    const initialTheme: Theme = window.localStorage.getItem("rscj-theme") === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = initialTheme;
     setTheme(initialTheme);
   }, []);
 
   function toggleTheme() {
-    const currentTheme = theme ?? (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
-    const nextTheme: Theme = currentTheme === "dark" ? "light" : "dark";
+    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = nextTheme;
-    try { window.localStorage.setItem("rscj-theme", nextTheme); } catch { /* The visual toggle still works if storage is blocked. */ }
+    window.localStorage.setItem("rscj-theme", nextTheme);
     setTheme(nextTheme);
   }
 

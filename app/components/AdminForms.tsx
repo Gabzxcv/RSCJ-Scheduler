@@ -7,10 +7,10 @@ import type { ActionState } from "@/lib/types";
 const empty: ActionState = {};
 const zones = ["Asia/Manila", "Asia/Singapore", "Asia/Hong_Kong", "Asia/Tokyo", "Australia/Sydney", "UTC", "Europe/London", "America/Los_Angeles", "America/New_York"];
 
-export function SettingsForm({ businessName, timezone, paymentDetails = "" }: { businessName: string; timezone: string; paymentDetails?: string }) {
+export function SettingsForm({ businessName, timezone }: { businessName: string; timezone: string }) {
   const [state, action, pending] = useActionState(updateSettingsAction, empty);
   const zoneOptions = zones.includes(timezone) ? zones : [timezone, ...zones];
-  return <form action={action} className="stack-form settings-form"><label>Business name<input name="business_name" defaultValue={businessName} required maxLength={80} /></label><label>Business time zone<select name="timezone" defaultValue={timezone}>{zoneOptions.map((zone) => <option value={zone} key={zone}>{zone.replaceAll("_", " ")}</option>)}</select><small>Trip times are shown in this time zone on every device.</small></label><label>Invoice payment details<textarea name="payment_details" defaultValue={paymentDetails} rows={4} maxLength={1000} placeholder="Bank name and account, GCash number, or other payment instructions" /><small>Shown on new invoices. Avoid entering passwords or one-time codes.</small></label>{state.error && <div className="notice error compact-notice">{state.error}</div>}{state.success && <div className="notice success compact-notice">{state.success}</div>}<button className="button primary" type="submit" disabled={pending}>{pending ? "Saving…" : "Save settings"}</button></form>;
+  return <form action={action} className="stack-form settings-form"><label>Business name<input name="business_name" defaultValue={businessName} required maxLength={80} /></label><label>Business time zone<select name="timezone" defaultValue={timezone}>{zoneOptions.map((zone) => <option value={zone} key={zone}>{zone.replaceAll("_", " ")}</option>)}</select><small>Trip times are shown in this time zone on every device.</small></label>{state.error && <div className="notice error compact-notice">{state.error}</div>}{state.success && <div className="notice success compact-notice">{state.success}</div>}<button className="button primary" type="submit" disabled={pending}>{pending ? "Saving…" : "Save settings"}</button></form>;
 }
 
 export function InviteUserForm() {

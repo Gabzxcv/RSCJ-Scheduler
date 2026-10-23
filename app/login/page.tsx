@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSignedInProfile } from "@/lib/auth";
 import { signInAction } from "@/app/actions/auth";
@@ -23,7 +22,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <form action={signInAction} className="stack-form login-form">
           <label>Email address<input name="email" type="email" autoComplete="username" placeholder="you@company.com" required /></label>
           <label>Password<input name="password" type="password" autoComplete="current-password" placeholder="Your password" required /></label>
-          <div className="login-password-help"><Link href="/forgot-password">Forgot password?</Link></div>
           <button className="button primary full" type="submit">Sign in <span aria-hidden="true">→</span></button>
         </form>
         <div className="login-foot"><span className="status-dot online" /> Private workspace · Boss and secretary access</div>

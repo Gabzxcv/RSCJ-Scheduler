@@ -117,10 +117,9 @@ export async function updateSettingsAction(_previous: ActionState, formData: For
   const { supabase, user } = await requireProfile(["boss"]);
   const business_name = value(formData, "business_name");
   const timezone = value(formData, "timezone");
-  const payment_details = value(formData, "payment_details");
   if (!business_name) return { error: "Business name is required." };
   try { new Intl.DateTimeFormat("en", { timeZone: timezone }); } catch { return { error: "Choose a valid time zone." }; }
-  const { error } = await supabase.from("app_settings").update({ business_name, timezone, payment_details, updated_by: user.id, updated_at: new Date().toISOString() }).eq("singleton", true);
+  const { error } = await supabase.from("app_settings").update({ business_name, timezone, updated_by: user.id, updated_at: new Date().toISOString() }).eq("singleton", true);
   if (error) return { error: error.message };
   revalidatePath("/");
   revalidatePath("/settings");

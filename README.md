@@ -15,7 +15,6 @@ The application expects a configured Supabase project. It does not fall back to 
 
 - Password sign-in; boss and secretary roles; boss-only team access, reports, and settings.
 - Day, week, and month schedule views, with driver, vehicle, and status filters.
-- Calendar date, view, and filter state can be shared or restored from its URL; trip data is queried for the visible period.
 - Create, edit, duplicate, cancel, and complete trips; assign multiple drivers and one vehicle.
 - Server-side checks prevent overlapping bookings for a driver or vehicle, including simultaneous saves; driver time-off, service status, and vehicle capacity are checked before saving too.
 - Driver contacts, license and emergency-contact details, and time-off ranges.
@@ -23,15 +22,13 @@ The application expects a configured Supabase project. It does not fall back to 
 - Trip activity history with the account and timestamp for every create or edit.
 - Search and filter history, export CSV, print daily/weekly/monthly schedules, and export a report.
 - Optional in-app trip reminders and assignment-change notifications.
-- Trip-linked invoices with unique invoice numbers, client billing details, quantity × rate line items, saved payment instructions, draft editing, one-tap paid status, invoice sharing, and print / save as PDF.
-- Installable home-screen app, offline fallback page, and iPhone/iPad touch-first layouts.
-- Email password reset, plus call and map links from trip details.
+- Trip-linked invoices with unique invoice numbers, client billing details, due dates, payment status tracking, and print / save as PDF.
 - Sample drivers, vehicles, and future trips for initial testing.
 - Responsive layout for mobile phones, tablets, and desktop browsers.
 
 ## Run locally
 
-1. Create a Supabase project and run `supabase/migrations/001_initial_schema.sql`, `supabase/migrations/002_invoices.sql`, `supabase/migrations/003_invoice_payment_details.sql`, and `supabase/migrations/004_invoice_line_items.sql` in its SQL Editor. For an existing project, apply whichever migrations have not already run.
+1. Create a Supabase project and run `supabase/migrations/001_initial_schema.sql`, then `supabase/migrations/002_invoices.sql`, in its SQL Editor. The second migration adds invoice storage and access policies. If your existing project already has the first migration, run only `002_invoices.sql`.
 2. Turn off public sign-ups in Supabase Auth settings. Create the initial boss account in **Authentication → Users**. Because manually created accounts are not invitations, add its workspace profile from the SQL Editor:
 
    ```sql
@@ -44,7 +41,7 @@ The application expects a configured Supabase project. It does not fall back to 
 
    The profile trigger creates profiles for invited users, with secretary access by default. Ordinary public sign-ups get no profile and cannot read workspace data; still keep public sign-ups disabled.
 3. Copy `.env.example` to `.env.local` and add the Supabase Project URL, publishable key, and server-only secret key. Find these in the Supabase project's **Connect / API Keys** settings. The `SUPABASE_SERVICE_ROLE_KEY` variable can hold the current `sb_secret_...` key or the legacy `service_role` key. Never add it to a `NEXT_PUBLIC_` variable.
-4. In Supabase **Authentication → URL Configuration**, set the local Site URL to `http://localhost:3000` and add `http://localhost:3000/**` to the allowed redirect URLs. Set `NEXT_PUBLIC_SITE_URL=http://localhost:3000` in `.env.local` so reset links return to this app.
+4. In Supabase **Authentication → URL Configuration**, set the local Site URL to `http://localhost:3000` and add `http://localhost:3000/**` to the allowed redirect URLs.
 5. Install and start the app:
 
    ```bash
@@ -72,13 +69,12 @@ The application expects a configured Supabase project. It does not fall back to 
    | --- | --- | --- |
    | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Public URL |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key | Browser-safe key; database RLS still applies |
-   | `NEXT_PUBLIC_SITE_URL` | Production app URL, such as `https://scheduler.example.com` | Used to construct password-reset callback URLs |
    | `SUPABASE_SERVICE_ROLE_KEY` | Supabase secret key (`sb_secret_...`) or legacy service role key | Server only; never expose to the browser |
    | `CRON_SECRET` | Long random secret for scheduled reminders | Server only; Vercel sends it to the scheduled route |
 
-4. Deploy. In Supabase **Authentication → URL Configuration**, set the Site URL to the production Vercel domain and add `http://localhost:3000/**` plus the production app URL and its `/auth/confirm?next=/set-password` callback to the redirect allow-list. Set `NEXT_PUBLIC_SITE_URL` to the production app URL in Vercel. Add Vercel preview URLs only if you plan to sign in on previews. Invitation emails use the Site URL, so set it before inviting the secretary.
+4. Deploy. In Supabase **Authentication → URL Configuration**, set the Site URL to the production Vercel domain and add `http://localhost:3000/**` plus your production app URL to the redirect allow-list. Add Vercel preview URLs only if you plan to sign in on previews. Invitation emails use the Site URL, so set it before inviting the secretary.
 5. Sign in as the boss, set the business name and time zone, add real drivers and vehicles, and invite the secretary.
-6. Run migrations `002_invoices.sql`, `003_invoice_payment_details.sql`, and `004_invoice_line_items.sql` in the production Supabase project if they have not already been applied. Do not rerun migration 001 on an existing project.
+6. Run `supabase/migrations/002_invoices.sql` in the production Supabase project's SQL Editor before using invoices. If the project already has `001_initial_schema.sql`, do not rerun it.
 7. Remove sample data before entering live operations. The sample rows are labeled and use `SAMPLE-` plates.
 8. If reminders are wanted, set `CRON_SECRET` in Vercel. The included Vercel cron adds an in-app reminder at 7 a.m. Manila time for scheduled or confirmed trips departing in the next 24 hours. Each user can switch reminders on or off in Notifications.
 
@@ -97,8 +93,8 @@ Vercel's current Next.js deployment guide: [vercel.com/docs/frameworks/full-stac
 ```bash
 npm run dev       # Local development
 npm run typecheck # TypeScript checks
+npm run lint      # ESLint checks
 npm run build     # Production build
-npm run analyze   # Inspect bundles (Next.js 16.1+)
 npm start         # Run the production build locally
 ```
 

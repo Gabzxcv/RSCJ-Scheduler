@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { updateInvoiceStatusAction } from "@/app/actions/invoices";
 import { requireProfile } from "@/lib/auth";
-import { DEFAULT_TIMEZONE, dateKey, formatDate } from "@/lib/time";
+import { DEFAULT_TIMEZONE, dateKey } from "@/lib/time";
 import type { Invoice } from "@/lib/types";
 
 function displayStatus(invoice: Invoice, today: string) {
@@ -56,8 +56,8 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
         return <article className="invoice-card panel" key={invoice.id}>
           <div className="invoice-card-top"><div><span className={`status-badge ${status}`}>{status === "overdue" ? "Overdue" : status[0].toUpperCase() + status.slice(1)}</span><p className="invoice-number">{invoice.invoice_number}</p></div><b className="invoice-card-amount">{money(Number(invoice.amount), invoice.currency)}</b></div>
           <Link className="invoice-client" href={`/invoices/${invoice.id}`}><b>{invoice.client_name}</b><span>{invoice.description}</span></Link>
-          <div className="invoice-card-meta"><span>Issued <b>{formatDate(invoice.issued_on)}</b></span><span>Due <b>{formatDate(invoice.due_on)}</b></span></div>
-          <div className="invoice-card-actions"><form action={updateInvoiceStatusAction} className="invoice-status-form"><input type="hidden" name="invoice_id" value={invoice.id} /><input type="hidden" name="return_to" value="/invoices" /><label><span className="sr-only">Status for {invoice.invoice_number}</span><select name="status" defaultValue={invoice.status}><option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="void">Void</option></select></label><button className="button secondary small-button" type="submit">Update status</button></form>{(invoice.status === "draft" || invoice.status === "sent") && <form action={updateInvoiceStatusAction}><input type="hidden" name="invoice_id" value={invoice.id} /><input type="hidden" name="status" value="paid" /><input type="hidden" name="return_to" value="/invoices" /><button className="button primary small-button" type="submit">Mark paid</button></form>}{invoice.status === "draft" && <Link href={`/invoices/${invoice.id}/edit`} className="text-link">Edit draft</Link>}<Link href={`/invoices/${invoice.id}`} className="text-link">View invoice →</Link></div>
+          <div className="invoice-card-meta"><span>Issued <b>{invoice.issued_on}</b></span><span>Due <b>{invoice.due_on}</b></span></div>
+          <div className="invoice-card-actions"><form action={updateInvoiceStatusAction} className="invoice-status-form"><input type="hidden" name="invoice_id" value={invoice.id} /><input type="hidden" name="return_to" value="/invoices" /><label><span className="sr-only">Status for {invoice.invoice_number}</span><select name="status" defaultValue={invoice.status}><option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="void">Void</option></select></label><button className="button secondary small-button" type="submit">Update status</button></form><Link href={`/invoices/${invoice.id}`} className="text-link">View invoice →</Link></div>
         </article>;
       }) : <div className="panel invoice-empty"><span className="empty-icon">＄</span><h2>{invoices.length ? "No invoices match those filters" : "No invoices yet"}</h2><p>{invoices.length ? "Try another search or status." : "Create your first invoice to start tracking payments."}</p>{!invoices.length && <Link className="button primary" href="/invoices/new">Create invoice</Link>}</div>}
     </section>
