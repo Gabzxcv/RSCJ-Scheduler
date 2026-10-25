@@ -4,6 +4,7 @@ import { signOutAction } from "@/app/actions/auth";
 import { NavLinks } from "@/app/components/NavLinks";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { MobileNav } from "@/app/components/MobileNav";
+import { AutoRefresh } from "@/app/components/AutoRefresh";
 
 export function AppFrame({ profile, businessName, unreadCount, children }: { profile: Profile; businessName: string; unreadCount: number; children: React.ReactNode }) {
   const initials = profile.display_name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || profile.email.slice(0, 1).toUpperCase();
@@ -22,5 +23,6 @@ export function AppFrame({ profile, businessName, unreadCount, children }: { pro
       <footer className="app-footer">RSCJ Scheduler <span>·</span> Schedule operations, made clear</footer>
     </div>
     <MobileNav profile={profile} />
+    <AutoRefresh />
   </div>;
 }

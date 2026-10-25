@@ -5,6 +5,7 @@ import { useActionState, useMemo, useState } from "react";
 import type { Driver, DriverAvailability, Trip, TripStatus, Vehicle } from "@/lib/types";
 import { localDateTimeToIso, toDateTimeLocal } from "@/lib/time";
 import { saveTripAction } from "@/app/actions/trips";
+import { useFormSubmit } from "@/app/components/useFormSubmit";
 import type { ActionState } from "@/lib/types";
 
 const initialState: ActionState = {};
@@ -20,6 +21,7 @@ export function TripForm({ trip, copyMode = false, drivers, vehicles, trips, ava
   timezone: string;
 }) {
   const [state, formAction, pending] = useActionState(saveTripAction, initialState);
+  const { ref: formRef, onSubmit } = useFormSubmit(formAction);
   const [driverIds, setDriverIds] = useState<string[]>(trip?.drivers?.map((driver) => driver.id) ?? []);
   const [vehicleId, setVehicleId] = useState(trip?.vehicle_id ?? "");
   const [status, setStatus] = useState<TripStatus>(trip?.status ?? "scheduled");
@@ -43,9 +45,37 @@ export function TripForm({ trip, copyMode = false, drivers, vehicles, trips, ava
     return issues;
   }, [startLocal, returnLocal, driverIds, vehicleId, status, trips, trip?.id, availability, vehicles, passengers, timezone]);
 
+  // Moving the departure keeps the same trip length; a blank or invalid return gets a 2-hour default.
+  function changeStart(next: string) {
+    const minutesBetween = (from: string, to: string) => (Date.parse(`${to}:00Z`) - Date.parse(`${from}:00Z`)) / 60000;
+    const shift = (value: string, minutes: number) => new Date(Date.parse(`${value}:00Z`) + minutes * 60000).toISOString().slice(0, 16);
+    setStartLocal(next);
+    if (!next || Number.isNaN(Date.parse(`${next}:00Z`))) return;
+    const previous = startLocal && returnLocal ? minutesBetween(startLocal, returnLocal) : 0;
+    setReturnLocal(shift(next, previous > 0 ? previous : 120));
+  }
+
+  // Who and what is already booked (or on leave) during the chosen time.
+  const busy = useMemo(() => {
+    const drivers = new Set<string>(), vehicles = new Set<string>(), off = new Set<string>();
+    if (!startLocal || !returnLocal) return { drivers, vehicles, off };
+    let start: number, end: number;
+    try { start = new Date(localDateTimeToIso(startLocal, timezone)).getTime(); end = new Date(localDateTimeToIso(returnLocal, timezone)).getTime(); } catch { return { drivers, vehicles, off }; }
+    if (!(end > start)) return { drivers, vehicles, off };
+    for (const item of trips) {
+      if (item.id === trip?.id || !["scheduled", "confirmed", "in_progress"].includes(item.status)) continue;
+      if (new Date(item.starts_at).getTime() < end && new Date(item.estimated_return_at).getTime() > start) {
+        if (item.vehicle_id) vehicles.add(item.vehicle_id);
+        item.drivers?.forEach((driver) => drivers.add(driver.id));
+      }
+    }
+    for (const item of availability) if (new Date(item.starts_at).getTime() < end && new Date(item.ends_at).getTime() > start) off.add(item.driver_id);
+    return { drivers, vehicles, off };
+  }, [startLocal, returnLocal, trips, availability, trip?.id, timezone]);
+
   const canAssignVehicle = vehicles.some((vehicle) => vehicle.service_status === "available");
   const activeDrivers = drivers.filter((driver) => driver.employment_status === "active");
-  return <form action={formAction} className="trip-form">
+  return <form ref={formRef} onSubmit={onSubmit} className="trip-form">
     {trip?.id && <input type="hidden" name="trip_id" value={trip.id} />}
     {copyMode && <div className="notice info"><b>Trip copied.</b> Set a new departure and return time, then review the assignments.</div>}
     {(state.error || warnings.length > 0) && <div className={`notice ${state.error ? "error" : "warning"}`} role="alert"><b>{state.error ? "Could not save this trip" : "Check the schedule"}</b><ul>{state.error && <li>{state.error}</li>}{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div>}
@@ -59,11 +89,11 @@ export function TripForm({ trip, copyMode = false, drivers, vehicles, trips, ava
     </div></section>
 
     <section className="form-section"><div className="form-section-head"><span className="form-step">02</span><div><h2>Time and assignment</h2><p>Pick the time, drivers, and vehicle for this trip.</p></div></div><div className="form-grid two-col">
-      <label>Departure <span className="required">*</span><input name="starts_at_local" type="datetime-local" value={startLocal} onChange={(event) => setStartLocal(event.target.value)} required /></label>
+      <label>Departure <span className="required">*</span><input name="starts_at_local" type="datetime-local" value={startLocal} onChange={(event) => changeStart(event.target.value)} required /></label>
       <label>Estimated return <span className="required">*</span><input name="estimated_return_local" type="datetime-local" value={returnLocal} onChange={(event) => setReturnLocal(event.target.value)} required /></label>
     </div>
-    <div className="assignment-layout"><div className="assignment-field"><div className="field-title">Assign driver(s) <span className="required">*</span><small>Choose one or more</small></div>{activeDrivers.length ? <div className="driver-options">{activeDrivers.map((driver) => <label className="driver-option" key={driver.id}><input type="checkbox" name="driver_ids" value={driver.id} checked={driverIds.includes(driver.id)} onChange={(event) => setDriverIds((previous) => event.target.checked ? [...previous, driver.id] : previous.filter((id) => id !== driver.id))} /><span className="option-check">✓</span><span className="driver-option-copy"><b>{driver.full_name}</b><small>{driver.phone || "No phone saved"}</small></span></label>)}</div> : <div className="empty-assignment">No active drivers yet. <Link href="/drivers">Add a driver →</Link></div>}</div>
-      <div className="assignment-field"><label className="field-title" htmlFor="vehicle-id">Vehicle <span className="required">*</span><small>Must be available</small></label><select id="vehicle-id" name="vehicle_id" value={vehicleId} onChange={(event) => setVehicleId(event.target.value)} required><option value="">Choose a vehicle</option>{vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id} disabled={vehicle.service_status !== "available"}>{vehicle.label} · {vehicle.plate_number} · {vehicle.capacity} seats{vehicle.service_status === "available" ? "" : ` (${vehicle.service_status.replaceAll("_", " ")})`}</option>)}</select>{!canAssignVehicle && <div className="empty-assignment">No available vehicles. <Link href="/vehicles">Check fleet status →</Link></div>}</div></div>
+    <div className="assignment-layout"><div className="assignment-field"><div className="field-title">Assign driver(s) <span className="required">*</span><small>Choose one or more</small></div>{activeDrivers.length ? <div className="driver-options">{activeDrivers.map((driver) => <label className="driver-option" key={driver.id}><input type="checkbox" name="driver_ids" value={driver.id} checked={driverIds.includes(driver.id)} onChange={(event) => setDriverIds((previous) => event.target.checked ? [...previous, driver.id] : previous.filter((id) => id !== driver.id))} /><span className="option-check">✓</span><span className="driver-option-copy"><b>{driver.full_name}</b><small className={busy.drivers.has(driver.id) || busy.off.has(driver.id) ? "option-busy" : undefined}>{busy.off.has(driver.id) ? "On leave then" : busy.drivers.has(driver.id) ? "Busy at this time" : driver.phone || "No phone saved"}</small></span></label>)}</div> : <div className="empty-assignment">No active drivers yet. <Link href="/drivers">Add a driver →</Link></div>}</div>
+      <div className="assignment-field"><label className="field-title" htmlFor="vehicle-id">Vehicle <span className="required">*</span><small>Must be available</small></label><select id="vehicle-id" name="vehicle_id" value={vehicleId} onChange={(event) => setVehicleId(event.target.value)} required><option value="">Choose a vehicle</option>{vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id} disabled={vehicle.service_status !== "available"}>{vehicle.label} · {vehicle.plate_number} · {vehicle.capacity} seats{vehicle.service_status === "available" ? (busy.vehicles.has(vehicle.id) ? " — busy at this time" : "") : ` (${vehicle.service_status.replaceAll("_", " ")})`}</option>)}</select>{!canAssignVehicle && <div className="empty-assignment">No available vehicles. <Link href="/vehicles">Check fleet status →</Link></div>}</div></div>
     </section>
 
     <section className="form-section"><div className="form-section-head"><span className="form-step">03</span><div><h2>Notes and requirements</h2><p>Share details the team needs before departure.</p></div></div><div className="form-grid two-col">

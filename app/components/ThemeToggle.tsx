@@ -1,23 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
-export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [theme, setTheme] = useState<Theme | null>(null);
+// The theme itself is set before first paint by the inline script in the root
+// layout. This button just reads and changes the <html data-theme> attribute.
+function subscribe(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  return () => observer.disconnect();
+}
+const getSnapshot = (): Theme => document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+const getServerSnapshot = (): Theme => "light";
 
-  useEffect(() => {
-    const initialTheme: Theme = window.localStorage.getItem("rscj-theme") === "dark" ? "dark" : "light";
-    document.documentElement.dataset.theme = initialTheme;
-    setTheme(initialTheme);
-  }, []);
+export function ThemeToggle({ className = "" }: { className?: string }) {
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function toggleTheme() {
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = nextTheme;
-    window.localStorage.setItem("rscj-theme", nextTheme);
-    setTheme(nextTheme);
+    try { window.localStorage.setItem("rscj-theme", nextTheme); } catch { /* private mode: keep the choice for this visit only */ }
   }
 
   const dark = theme === "dark";

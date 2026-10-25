@@ -1,19 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Driver, DriverAvailability, Trip, Vehicle } from "@/lib/types";
 import { dateKey, dateKeyToUtc, dateLabel, formatTime, localDateTimeToIso, monthTitle, shiftDateKey } from "@/lib/time";
 
-type ViewMode = "day" | "week" | "month";
+type ViewMode = "day" | "week" | "month" | "agenda";
+const viewModes: ViewMode[] = ["day", "week", "month", "agenda"];
+const validDate = (value: string | null): value is string => Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(dateKeyToUtc(value).getTime()));
 const statusNames: Record<string, string> = { scheduled: "Scheduled", confirmed: "Confirmed", in_progress: "In progress", completed: "Completed", cancelled: "Cancelled" };
 
 export function CalendarClient({ trips, drivers, vehicles, availability, timezone }: { trips: Trip[]; drivers: Driver[]; vehicles: Vehicle[]; availability: DriverAvailability[]; timezone: string }) {
-  const [mode, setMode] = useState<ViewMode>("day");
-  const [selectedDate, setSelectedDate] = useState(() => dateKey(new Date(), timezone));
-  const [driverFilter, setDriverFilter] = useState("all");
-  const [vehicleFilter, setVehicleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const router = useRouter();
+  const params = useSearchParams();
+  // The view, date, and filters live in the URL, so Back, refresh, and shared links return to the same place.
+  const [mode, setMode] = useState<ViewMode>(() => { const view = params.get("view") as ViewMode | null; return view && viewModes.includes(view) ? view : "day"; });
+  const [selectedDate, setSelectedDate] = useState(() => { const date = params.get("date"); return validDate(date) ? date : dateKey(new Date(), timezone); });
+  const [driverFilter, setDriverFilter] = useState(() => params.get("driver") || "all");
+  const [vehicleFilter, setVehicleFilter] = useState(() => params.get("vehicle") || "all");
+  const [statusFilter, setStatusFilter] = useState(() => params.get("status") || "all");
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const visibleTrips = useMemo(() => trips.filter((trip) => {
     if (driverFilter !== "all" && !trip.drivers?.some((driver) => driver.id === driverFilter)) return false;
     if (vehicleFilter !== "all" && trip.vehicle_id !== vehicleFilter) return false;
@@ -23,6 +30,7 @@ export function CalendarClient({ trips, drivers, vehicles, availability, timezon
   const dayKeys = useMemo(() => {
     const selected = dateKeyToUtc(selectedDate);
     if (mode === "day") return [selectedDate];
+    if (mode === "agenda") return Array.from({ length: 14 }, (_, index) => shiftDateKey(selectedDate, index));
     if (mode === "week") {
       const mondayOffset = (selected.getUTCDay() + 6) % 7;
       const monday = shiftDateKey(selectedDate, -mondayOffset);
@@ -33,7 +41,7 @@ export function CalendarClient({ trips, drivers, vehicles, availability, timezon
     return Array.from({ length: 42 }, (_, index) => shiftDateKey(startKey, index));
   }, [mode, selectedDate]);
   const inCurrentMonth = (key: string) => key.slice(0, 7) === selectedDate.slice(0, 7);
-  const heading = mode === "month" ? monthTitle(selectedDate) : mode === "day" ? dateLabel(selectedDate, { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : `${dateLabel(dayKeys[0], { month: "short", day: "numeric" })} – ${dateLabel(dayKeys[6], { month: "short", day: "numeric", year: "numeric" })}`;
+  const heading = mode === "month" ? monthTitle(selectedDate) : mode === "day" ? dateLabel(selectedDate, { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : `${dateLabel(dayKeys[0], { weekday: undefined, year: undefined, month: "short", day: "numeric" })} – ${dateLabel(dayKeys[dayKeys.length - 1], { weekday: undefined, month: "short", day: "numeric", year: "numeric" })}`;
   const scheduleTrips = visibleTrips.filter((trip) => mode === "month" || dayKeys.includes(dateKey(trip.starts_at, timezone)));
   const assignedOnSelected = new Set(visibleTrips.filter((trip) => dateKey(trip.starts_at, timezone) === selectedDate && trip.status !== "cancelled").flatMap((trip) => (trip.drivers ?? []).map((driver) => driver.id)));
   const selectedDayStart = new Date(localDateTimeToIso(`${selectedDate}T00:00`, timezone)).getTime();
@@ -46,8 +54,38 @@ export function CalendarClient({ trips, drivers, vehicles, availability, timezon
       const date = dateKeyToUtc(selectedDate);
       date.setUTCMonth(date.getUTCMonth() + delta);
       setSelectedDate(`${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-01`);
-    } else setSelectedDate(shiftDateKey(selectedDate, delta));
+    } else setSelectedDate(shiftDateKey(selectedDate, mode === "week" || mode === "agenda" ? delta * 7 : delta));
   }
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const today = dateKey(new Date(), timezone);
+    const entries: Array<[string, string | null]> = [["view", mode === "day" ? null : mode], ["date", selectedDate === today ? null : selectedDate], ["driver", driverFilter === "all" ? null : driverFilter], ["vehicle", vehicleFilter === "all" ? null : vehicleFilter], ["status", statusFilter === "all" ? null : statusFilter]];
+    for (const [key, value] of entries) { if (value) url.searchParams.set(key, value); else url.searchParams.delete(key); }
+    if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url);
+  }, [mode, selectedDate, driverFilter, vehicleFilter, statusFilter, timezone]);
+
+  function onTouchStart(event: React.TouchEvent) { const touch = event.touches[0]; swipeStart.current = { x: touch.clientX, y: touch.clientY }; }
+  function onTouchEnd(event: React.TouchEvent) {
+    const start = swipeStart.current; swipeStart.current = null;
+    if (!start || (mode !== "day" && mode !== "agenda")) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x, dy = touch.clientY - start.y;
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) move(dx < 0 ? 1 : -1);
+  }
+
+  const today = dateKey(new Date(), timezone);
+  const agendaView = <div className="agenda">
+    {dayKeys.map((key) => ({ key, items: scheduleTrips.filter((trip) => dateKey(trip.starts_at, timezone) === key) })).filter((day) => day.items.length).map(({ key, items }) => <section key={key} className="agenda-day">
+      <h3 className={`agenda-day-heading ${key === today ? "is-today" : ""}`}>{dateLabel(key, { weekday: "long", month: "short", day: "numeric" })}{key === today && <span className="agenda-today">Today</span>}</h3>
+      {items.map((trip) => <Link key={trip.id} href={`/trips/${trip.id}`} className={`agenda-trip ${trip.status}`}>
+        <span className="agenda-time"><b>{formatTime(trip.starts_at, timezone)}</b><small>to {formatTime(trip.estimated_return_at, timezone)}</small></span>
+        <span className="agenda-copy"><b>{trip.destination}</b><small>From {trip.pickup_location}</small><small>{trip.drivers?.map((driver) => driver.full_name).join(", ") || "Unassigned"}{trip.vehicle ? ` · ${trip.vehicle.label}` : ""}</small></span>
+        <span className={`status-badge ${trip.status}`}>{statusNames[trip.status]}</span>
+      </Link>)}
+    </section>)}
+    {!scheduleTrips.length && <div className="empty-inline">No trips in this period. <Link className="text-link" href={`/trips/new?date=${selectedDate}`}>Plan a trip →</Link></div>}
+  </div>;
 
   function exportCsv() {
     const rows = scheduleTrips.map((trip) => [
@@ -68,18 +106,18 @@ export function CalendarClient({ trips, drivers, vehicles, availability, timezon
   return <>
     <div className="page-heading schedule-heading"><div><p className="eyebrow">PLAN YOUR OPERATIONS</p><h1>Schedule</h1><p className="muted">A shared view of every driver, vehicle, and trip.</p></div><Link href="/trips/new" className="button primary"><span>＋</span> Create trip</Link></div>
     <section className="schedule-toolbar panel">
-      <div className="calendar-controls"><div className="view-switch" role="group" aria-label="Calendar view">{(["day", "week", "month"] as const).map((view) => <button key={view} className={mode === view ? "selected" : ""} onClick={() => setMode(view)}>{view[0].toUpperCase() + view.slice(1)}</button>)}</div><button className="icon-button calendar-arrow" onClick={() => move(-1)} aria-label="Previous period">←</button><button className="button secondary today-button" onClick={() => setSelectedDate(dateKey(new Date(), timezone))}>Today</button><button className="icon-button calendar-arrow" onClick={() => move(1)} aria-label="Next period">→</button><h2 className="calendar-period">{heading}</h2></div>
+      <div className="calendar-controls"><div className="view-switch" role="group" aria-label="Calendar view">{viewModes.map((view) => <button key={view} type="button" className={mode === view ? "selected" : ""} aria-pressed={mode === view} onClick={() => setMode(view)}>{view[0].toUpperCase() + view.slice(1)}</button>)}</div><button className="icon-button calendar-arrow" onClick={() => move(-1)} aria-label="Previous period">←</button><button className="button secondary today-button" onClick={() => setSelectedDate(dateKey(new Date(), timezone))}>Today</button><button className="icon-button calendar-arrow" onClick={() => move(1)} aria-label="Next period">→</button><h2 className="calendar-period">{heading}</h2></div>
       <div className="filter-row"><label className="filter-select"><span>Driver</span><select value={driverFilter} onChange={(event) => setDriverFilter(event.target.value)}><option value="all">All drivers</option>{drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.full_name}</option>)}</select></label><label className="filter-select"><span>Vehicle</span><select value={vehicleFilter} onChange={(event) => setVehicleFilter(event.target.value)}><option value="all">All vehicles</option>{vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.label} · {vehicle.plate_number}</option>)}</select></label><label className="filter-select"><span>Status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All statuses</option>{Object.entries(statusNames).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>{hasFilters && <button className="clear-filter" onClick={() => { setDriverFilter("all"); setVehicleFilter("all"); setStatusFilter("all"); }}>Clear filters</button>}<div className="toolbar-spacer" /><button className="button secondary action-button" onClick={exportCsv}>↓ <span>Download</span></button><button className="button secondary action-button" onClick={() => window.print()}>▧ <span>Print</span></button></div>
     </section>
-    <section className={`calendar-surface panel ${mode === "month" ? "month-surface" : ""}`}>
-      {mode === "month" ? <div className="month-grid"><div className="month-weekdays">{["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((day) => <span key={day}>{day}</span>)}</div><div className="month-days">{dayKeys.map((key) => {
+    <section className={`calendar-surface panel ${mode === "month" ? "month-surface" : ""} ${mode === "agenda" ? "agenda-surface" : ""}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {mode === "agenda" ? agendaView : mode === "month" ? <div className="month-grid"><div className="month-weekdays">{["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((day) => <span key={day}>{day}</span>)}</div><div className="month-days">{dayKeys.map((key) => {
         const dayTrips = scheduleTrips.filter((trip) => dateKey(trip.starts_at, timezone) === key);
         const dayNumber = Number(key.slice(-2));
         return <button key={key} onClick={() => { setSelectedDate(key); setMode("day"); }} className={`month-cell ${inCurrentMonth(key) ? "" : "outside-month"} ${key === selectedDate ? "current-selected" : ""} ${key === dateKey(new Date(), timezone) ? "is-today" : ""}`}><span className="month-day-num">{dayNumber}</span>{dayTrips.slice(0, 3).map((trip) => <span key={trip.id} className={`month-trip ${trip.status}`}><i />{formatTime(trip.starts_at, timezone)} {trip.destination}</span>)}{dayTrips.length > 3 && <span className="more-trips">+{dayTrips.length - 3} more</span>}</button>;
       })}</div></div> : <div className={`period-grid ${mode === "day" ? "single-day" : ""}`}>
         {dayKeys.map((key) => {
           const dayTrips = scheduleTrips.filter((trip) => dateKey(trip.starts_at, timezone) === key);
-          return <div key={key} className={`period-column ${key === dateKey(new Date(), timezone) ? "is-today" : ""}`}><button className="period-column-heading" onClick={() => { setSelectedDate(key); setMode("day"); }}><span>{dateLabel(key, { weekday: "short" }).slice(0, 3).toUpperCase()}</span><b>{Number(key.slice(-2))}</b></button>{dayTrips.length ? dayTrips.map((trip) => <TripCard key={trip.id} trip={trip} timezone={timezone} compact={mode === "week"} />) : <button className="empty-day" onClick={() => window.location.assign(`/trips/new?date=${key}`)}>＋<span>Plan a trip</span></button>}</div>;
+          return <div key={key} className={`period-column ${key === dateKey(new Date(), timezone) ? "is-today" : ""}`}><button className="period-column-heading" onClick={() => { setSelectedDate(key); setMode("day"); }}><span>{dateLabel(key, { weekday: "short" }).slice(0, 3).toUpperCase()}</span><b>{Number(key.slice(-2))}</b></button>{dayTrips.length ? dayTrips.map((trip) => <TripCard key={trip.id} trip={trip} timezone={timezone} compact={mode === "week"} />) : <button className="empty-day" onClick={() => router.push(`/trips/new?date=${key}`)}>＋<span>Plan a trip</span></button>}</div>;
         })}
       </div>}
     </section>

@@ -71,6 +71,10 @@ Run `npm run analyze` with Next.js 16.1 or newer to open the built-in Turbopack 
 
 This app has no public catalog or landing pages that can benefit from SSG/ISR today. If public, non-personalized pages are added later, they can be statically generated while keeping the signed-in workspace dynamic.
 
+### Security headers, install icon, and CI
+
+`next.config.ts` sends standard security headers (HSTS, frame, content-type, referrer, and permissions policies). The home-screen icon, manifest, and offline page live in `app/` and `public/`. The included GitHub Actions workflow (`.github/workflows/ci.yml`) runs type checks, lint, tests, and a build on every push; it uses placeholder Supabase values and needs no secrets.
+
 ## 5. Backups and recovery
 
 Enable the database backup or point-in-time recovery option available for the selected Supabase plan. Before applying schema changes, make a database dump with the Supabase CLI and store it in a protected location outside this repository. For example, after installing and linking the CLI to the project:

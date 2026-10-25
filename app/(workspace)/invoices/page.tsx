@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { updateInvoiceStatusAction } from "@/app/actions/invoices";
 import { requireProfile } from "@/lib/auth";
-import { DEFAULT_TIMEZONE, dateKey } from "@/lib/time";
+import { DEFAULT_TIMEZONE, dateKey, formatDate } from "@/lib/time";
+import { ExportCsvButton } from "@/app/components/ExportCsvButton";
+import { Icon } from "@/app/components/Icon";
 import type { Invoice } from "@/lib/types";
 
 function displayStatus(invoice: Invoice, today: string) {
@@ -22,7 +24,8 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   ]);
   if (query.error) throw new Error(`Could not load invoices: ${query.error.message}`);
   const invoices = (query.data ?? []) as Invoice[];
-  const today = dateKey(new Date(), settings.data?.timezone || DEFAULT_TIMEZONE);
+  const timezone = settings.data?.timezone || DEFAULT_TIMEZONE;
+  const today = dateKey(new Date(), timezone);
   const search = (params.q ?? "").trim().toLowerCase();
   const filtered = invoices.filter((invoice) => {
     const status = displayStatus(invoice, today);
@@ -35,7 +38,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   const paid = invoices.filter((invoice) => invoice.status === "paid").reduce((total, invoice) => total + Number(invoice.amount), 0);
 
   return <>
-    <div className="page-heading invoice-page-heading"><div><p className="eyebrow">BILLING AND PAYMENTS</p><h1>Invoices</h1><p className="muted">Create bills for trips and track what has been paid.</p></div><Link className="button primary" href="/invoices/new"><span>＋</span> New invoice</Link></div>
+    <div className="page-heading invoice-page-heading"><div><p className="eyebrow">BILLING AND PAYMENTS</p><h1>Invoices</h1><p className="muted">Create bills for trips and track what has been paid.</p></div><div className="page-heading-actions"><ExportCsvButton filename={`rscj-invoices-${today}.csv`} headers={["Invoice number", "Client", "Email", "Phone", "Description", "Issued", "Due", "Amount", "Currency", "Status", "Paid on"]} rows={filtered.map((invoice) => [invoice.invoice_number, invoice.client_name, invoice.client_email, invoice.client_phone, invoice.description, invoice.issued_on, invoice.due_on, Number(invoice.amount).toFixed(2), invoice.currency, displayStatus(invoice, today), invoice.paid_at ? dateKey(invoice.paid_at, timezone) : ""])}>Export CSV</ExportCsvButton><Link className="button primary" href="/invoices/new"><span>＋</span> New invoice</Link></div></div>
     {params.error && <div className="notice error">{params.error}</div>}
     {params.updated && <div className="notice success">Invoice status updated.</div>}
     <section className="invoice-metrics" aria-label="Invoice totals">
@@ -56,8 +59,8 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
         return <article className="invoice-card panel" key={invoice.id}>
           <div className="invoice-card-top"><div><span className={`status-badge ${status}`}>{status === "overdue" ? "Overdue" : status[0].toUpperCase() + status.slice(1)}</span><p className="invoice-number">{invoice.invoice_number}</p></div><b className="invoice-card-amount">{money(Number(invoice.amount), invoice.currency)}</b></div>
           <Link className="invoice-client" href={`/invoices/${invoice.id}`}><b>{invoice.client_name}</b><span>{invoice.description}</span></Link>
-          <div className="invoice-card-meta"><span>Issued <b>{invoice.issued_on}</b></span><span>Due <b>{invoice.due_on}</b></span></div>
-          <div className="invoice-card-actions"><form action={updateInvoiceStatusAction} className="invoice-status-form"><input type="hidden" name="invoice_id" value={invoice.id} /><input type="hidden" name="return_to" value="/invoices" /><label><span className="sr-only">Status for {invoice.invoice_number}</span><select name="status" defaultValue={invoice.status}><option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="void">Void</option></select></label><button className="button secondary small-button" type="submit">Update status</button></form><Link href={`/invoices/${invoice.id}`} className="text-link">View invoice →</Link></div>
+          <div className="invoice-card-meta"><span>Issued <b>{formatDate(invoice.issued_on, timezone)}</b></span><span>Due <b>{formatDate(invoice.due_on, timezone)}</b></span></div>
+          <div className="invoice-card-actions">{(invoice.status === "draft" || invoice.status === "sent") && <form action={updateInvoiceStatusAction}><input type="hidden" name="invoice_id" value={invoice.id} /><input type="hidden" name="return_to" value="/invoices" /><input type="hidden" name="status" value="paid" /><button className="button primary small-button" type="submit"><Icon name="check" /> Mark paid</button></form>}<form action={updateInvoiceStatusAction} className="invoice-status-form"><input type="hidden" name="invoice_id" value={invoice.id} /><input type="hidden" name="return_to" value="/invoices" /><label><span className="sr-only">Status for {invoice.invoice_number}</span><select name="status" defaultValue={invoice.status}><option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="void">Void</option></select></label><button className="button secondary small-button" type="submit">Update status</button></form><Link href={`/invoices/${invoice.id}`} className="text-link">View invoice →</Link></div>
         </article>;
       }) : <div className="panel invoice-empty"><span className="empty-icon">＄</span><h2>{invoices.length ? "No invoices match those filters" : "No invoices yet"}</h2><p>{invoices.length ? "Try another search or status." : "Create your first invoice to start tracking payments."}</p>{!invoices.length && <Link className="button primary" href="/invoices/new">Create invoice</Link>}</div>}
     </section>

@@ -24,7 +24,17 @@ The application expects a configured Supabase project. It does not fall back to 
 - Optional in-app trip reminders and assignment-change notifications.
 - Trip-linked invoices with unique invoice numbers, client billing details, due dates, payment status tracking, and print / save as PDF.
 - Sample drivers, vehicles, and future trips for initial testing.
-- Responsive layout for mobile phones, tablets, and desktop browsers.
+- Responsive layout for mobile phones, tablets, and desktop browsers, tuned for iPhone and iPad (see below).
+
+## iPhone and iPad features
+
+- **Add to Home Screen:** open the live site in Safari, tap Share, then **Add to Home Screen**. It opens full screen with its own icon, and shows a friendly page if the connection drops.
+- Larger text and 44px touch targets on iPad, 16px inputs so Safari never zooms, safe-area spacing, sticky Save buttons, and light/dark mode that follows the device with no white flash.
+- **Schedule:** Day, Week, Month, and a phone-friendly **Agenda** list. The view, date, and filters are kept in the address, so Back and refresh return to the same place. Swipe left/right to change day. The page refreshes itself when you return to the app.
+- **Trips:** tap to call the client or driver, open pickup/destination in Apple or Google Maps, and share a trip summary to Messages, WhatsApp, Viber, or Mail. The trip form fills the return time, shows who is busy or on leave, and keeps what you typed if a save is rejected.
+- **Invoices:** Share PDF (opens the share sheet with the PDF attached), Download PDF, Email/Text client, one-tap Mark paid, edit drafts, duplicate, and CSV export for your accountant. Put GCash or bank details in the invoice Notes; they print on the PDF.
+
+None of these need new environment variables or database changes.
 
 ## Run locally
 
@@ -93,6 +103,7 @@ Vercel's current Next.js deployment guide: [vercel.com/docs/frameworks/full-stac
 ```bash
 npm run dev       # Local development
 npm run typecheck # TypeScript checks
+npm test          # Unit tests (time zones, invoice PDF)
 npm run lint      # ESLint checks
 npm run build     # Production build
 npm run analyze   # Inspect bundles (Next.js 16.1+)

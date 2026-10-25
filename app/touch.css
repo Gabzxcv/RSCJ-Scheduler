@@ -1,0 +1,379 @@
+/*
+ * Touch-device polish for iPhone and iPad.
+ * 1) Tablet type scale: the base styles use very small desktop text. On iPad-sized
+ *    screens (and iPad Pro in landscape) the same rules are scaled up for reading.
+ * 2) Light-theme contrast: small grey text is darkened to pass WCAG AA on white.
+ * 3) Touch targets, 16px inputs (stops iOS zooming on focus), safe areas, sticky
+ *    save bars, week-view snap scrolling, skeleton loading and agenda/share styles.
+ */
+
+/* ---- 1. Tablet type scale (generated from the base stylesheet) ---- */
+@media screen and (min-width: 761px) and (max-width: 1100px), screen and (min-width: 1101px) and (pointer: coarse) {
+  body { font-size: 15px; }
+  .side-brand small { font-size: 13px; }
+  .side-label { font-size: 12px; }
+  .sidebar-help b { font-size: 13px; }
+  .sidebar-help span { font-size: 12px; }
+  .avatar { font-size: 12.5px; }
+  .small-avatar { font-size: 12px; }
+  .user-copy b { font-size: 13px; }
+  .user-copy small { font-size: 12.5px; }
+  .topbar-date { font-size: 13px; }
+  .notification-bell > span { font-size: 10.5px; }
+  .app-footer { font-size: 12.5px; }
+  .eyebrow { font-size: 12px; }
+  .muted { font-size: 13.5px; }
+  .button { font-size: 13.5px; }
+  .top-add { font-size: 13px; }
+  .small-button { font-size: 12.5px; }
+  .text-link { font-size: 13px; }
+  .metric-caption { font-size: 11px; }
+  .metric-label { font-size: 13px; }
+  .metric-foot { font-size: 12px; }
+  .alert-card b { font-size: 13px; }
+  .alert-card p { font-size: 12.5px; }
+  .alert-card > a { font-size: 12.5px; }
+  .upcoming-date b { font-size: 13.5px; }
+  .upcoming-date small { font-size: 12px; }
+  .upcoming-copy b { font-size: 13px; }
+  .upcoming-copy span, .upcoming-copy small { font-size: 12px; }
+  .status-badge { font-size: 11px; }
+  .run-time { font-size: 12.5px; }
+  .run-copy b { font-size: 13px; }
+  .run-copy span { font-size: 12px; }
+  .empty-state p { font-size: 13px; }
+  .empty-inline { font-size: 13px; }
+  .quick-action b { font-size: 12.5px; }
+  .quick-action small { font-size: 11.5px; }
+  .view-switch button { font-size: 12px; }
+  .today-button { font-size: 12px; }
+  .filter-select > span { font-size: 11px; }
+  .filter-select select, .filter-select input { font-size: 12px; }
+  .action-button { font-size: 12.5px; }
+  .action-button > span { font-size: 12px; }
+  .clear-filter { font-size: 12px; }
+  .period-column-heading span { font-size: 11px; }
+  .period-column-heading b { font-size: 13px; }
+  .calendar-trip b { font-size: 12px; }
+  .calendar-trip small { font-size: 11px; }
+  .trip-card-time { font-size: 11px; }
+  .compact-trip b { font-size: 11px; }
+  .compact-trip small { font-size: 10.5px; }
+  .empty-day span { font-size: 11px; }
+  .single-day .calendar-trip b { font-size: 13.5px; }
+  .single-day .calendar-trip small, .single-day .trip-card-time { font-size: 12px; }
+  .single-day .trip-card-status { font-size: 11px; }
+  .month-weekdays span { font-size: 11px; }
+  .month-day-num { font-size: 12px; }
+  .month-trip { font-size: 10.5px; }
+  .more-trips { font-size: 10.5px; }
+  .calendar-legend span { font-size: 12px; }
+  .availability-chip b { font-size: 12px; }
+  .availability-chip > span:last-child { font-size: 11px; }
+  .breadcrumbs { font-size: 12.5px; }
+  .form-step { font-size: 12px; }
+  .form-section-head p { font-size: 12.5px; }
+  .form-grid label, .stack-form > label { font-size: 12.5px; }
+  .form-grid input, .form-grid select, .form-grid textarea, .stack-form input, .stack-form select, .stack-form textarea, .assignment-field > select { font-size: 12.5px; }
+  .field-title { font-size: 12.5px; }
+  .field-title small { font-size: 12px; }
+  .option-check { font-size: 12.5px; }
+  .driver-option-copy b { font-size: 12px; }
+  .driver-option-copy small { font-size: 11px; }
+  .empty-assignment { font-size: 12px; }
+  .notice { font-size: 13px; }
+  .notice b { font-size: 13px; }
+  .notice p { font-size: 12.5px; }
+  .compact-notice { font-size: 12px; }
+  .count-pill { font-size: 12px; }
+  th { font-size: 11px; }
+  td { font-size: 12px; }
+  .table-person b { font-size: 12px; }
+  .table-person small, td small { font-size: 11px; }
+  .inline-manage select, .fleet-status-form select { font-size: 11.5px; }
+  .mini-form-panel > .muted, .availability-form-panel > .muted { font-size: 12.5px; }
+  .record-form .form-grid label { font-size: 12px; }
+  .record-form .form-grid input { font-size: 12px; }
+  .availability-form-panel .stack-form > label { font-size: 12px; }
+  .availability-form-panel .stack-form input, .availability-form-panel .stack-form select { font-size: 12px; }
+  .availability-form-panel .button { font-size: 12px; }
+  .timeoff-row > b { font-size: 12px; }
+  .timeoff-row > span:nth-of-type(2), .timeoff-row > small { font-size: 11.5px; }
+  .plate-number { font-size: 12px; }
+  .fleet-specs small { font-size: 10.5px; }
+  .fleet-specs b { font-size: 12px; }
+  .fleet-notes { font-size: 12px; }
+  .fleet-tip b { font-size: 12px; }
+  .fleet-tip p { font-size: 11px; }
+  .detail-section small, .detail-two-up small, .record-list span { font-size: 11px; }
+  .detail-section p { font-size: 12px; }
+  .assigned-person b { font-size: 12px; }
+  .assigned-person small { font-size: 11px; }
+  .detail-two-up b { font-size: 12.5px; }
+  .detail-two-up a { font-size: 12px; }
+  .detail-two-up p { font-size: 12px; }
+  .record-list span { font-size: 11px; }
+  .record-list b { font-size: 11px; }
+  .activity-feed h3 { font-size: 12.5px; }
+  .activity-item b { font-size: 11.5px; }
+  .activity-item small { font-size: 10.5px; }
+  .tip-card b { font-size: 12.5px; }
+  .tip-card p { font-size: 11.5px; }
+  .tip-card a { font-size: 12px; }
+  .history-search input { font-size: 12px; }
+  .history-filters > .button { font-size: 12px; }
+  .history-trip-link b { font-size: 12px; }
+  .history-assignment b { font-size: 11.5px; }
+  .history-assignment small { font-size: 11px; }
+  .history-change { font-size: 11px; }
+  .history-status { font-size: 11px; }
+  .history-table td > b { font-size: 11.5px; }
+  .status-breakdown-row b { font-size: 12px; }
+  .status-breakdown-row small { font-size: 11px; }
+  .destination-rank { font-size: 12px; }
+  .destination-row b { font-size: 12px; }
+  .destination-row span:last-child { font-size: 11px; }
+  .workload-name b { font-size: 12px; }
+  .workload-name small { font-size: 11px; }
+  .report-notes p { font-size: 12px; }
+  .report-notes a { font-size: 12px; }
+  .settings-form small { font-size: 11px; }
+  .security-note p, .security-note li { font-size: 12px; }
+  .security-note > b { font-size: 12px; }
+  .role-pill { font-size: 11px; }
+  .text-button { font-size: 11px; }
+  .guide-number { font-size: 12px; }
+  .guide-step p { font-size: 12.5px; }
+  .guide-aside p { font-size: 12px; }
+  .guide-aside > b { font-size: 12px; }
+  .notification-title b { font-size: 12.5px; }
+  .notification-copy p { font-size: 12px; }
+  .notification-copy small { font-size: 11px; }
+  .notification-copy a { font-size: 11px; }
+  .reminder-settings > p { font-size: 12px; }
+  .reminder-toggle-form b { font-size: 12px; }
+  .reminder-settings > small { font-size: 11px; }
+  .login-panel > .muted { font-size: 13.5px; }
+  .login-form label { font-size: 12.5px; }
+  .login-form input { font-size: 13px; }
+  .login-foot { font-size: 12px; }
+  .invoice-metric > span { font-size: 13px; }
+  .invoice-metric > small { font-size: 12px; }
+  .invoice-search, .invoice-filter-status { font-size: 12px; }
+  .invoice-filters input, .invoice-filters select, .invoice-status-form select { font-size: 13px; }
+  .invoice-number { font-size: 12px; }
+  .invoice-client span { font-size: 12.5px; }
+  .invoice-card-meta { font-size: 12px; }
+  .invoice-empty p { font-size: 13px; }
+  .invoice-form-section > div:first-child .muted { font-size: 12.5px; }
+  .invoice-field { font-size: 12.5px; }
+  .invoice-field input, .invoice-field select, .invoice-field textarea { font-size: 13.5px; }
+  .invoice-document-header > div:first-child small { font-size: 12.5px; }
+  .invoice-document-parties p { font-size: 13px; }
+  .invoice-document-parties a { font-size: 13px; }
+  .invoice-date-block > div { font-size: 12.5px; }
+  .invoice-line-header { font-size: 12px; }
+  .invoice-line { font-size: 13px; }
+  .invoice-total { font-size: 13.5px; }
+  .invoice-notes p { font-size: 13px; }
+  .invoice-document-footer { font-size: 12.5px; }
+  .invoice-update-panel .muted { font-size: 12.5px; }
+}
+
+/* ---- 2. Light-theme contrast for small grey text ---- */
+html:not([data-theme="dark"]) .side-label { color: #667085; }
+html:not([data-theme="dark"]) .nav-link { color: #667085; }
+html:not([data-theme="dark"]) .icon-button { color: #667085; }
+html:not([data-theme="dark"]) .app-footer { color: #667085; }
+html:not([data-theme="dark"]) .eyebrow { color: #667085; }
+html:not([data-theme="dark"]) .icon-link { color: #667085; }
+html:not([data-theme="dark"]) .metric-caption { color: #667085; }
+html:not([data-theme="dark"]) .metric-value small { color: #667085; }
+html:not([data-theme="dark"]) .metric-foot { color: #667085; }
+html:not([data-theme="dark"]) .upcoming-date small { color: #667085; }
+html:not([data-theme="dark"]) .upcoming-copy span { color: #667085; }
+html:not([data-theme="dark"]) .upcoming-copy small { color: #667085; }
+html:not([data-theme="dark"]) .row-chevron { color: #667085; }
+html:not([data-theme="dark"]) .run-copy span { color: #667085; }
+html:not([data-theme="dark"]) .empty-state p { color: #667085; }
+html:not([data-theme="dark"]) .empty-inline { color: #667085; }
+html:not([data-theme="dark"]) .quick-action small { color: #667085; }
+html:not([data-theme="dark"]) .quick-action i { color: #667085; }
+html:not([data-theme="dark"]) .view-switch button { color: #667085; }
+html:not([data-theme="dark"]) .filter-select > span { color: #667085; }
+html:not([data-theme="dark"]) .period-column-heading { color: #667085; }
+html:not([data-theme="dark"]) .empty-day { color: #667085; }
+html:not([data-theme="dark"]) .month-weekdays span { color: #667085; }
+html:not([data-theme="dark"]) .month-cell.outside-month .month-day-num { color: #667085; }
+html:not([data-theme="dark"]) .more-trips { color: #667085; }
+html:not([data-theme="dark"]) .calendar-legend span { color: #667085; }
+html:not([data-theme="dark"]) .availability-chip > span:last-child { color: #667085; }
+html:not([data-theme="dark"]) .breadcrumbs { color: #667085; }
+html:not([data-theme="dark"]) .form-section-head p { color: #667085; }
+html:not([data-theme="dark"]) .field-title small { color: #667085; }
+html:not([data-theme="dark"]) .driver-option-copy small { color: #667085; }
+html:not([data-theme="dark"]) .empty-assignment { color: #667085; }
+html:not([data-theme="dark"]) th { color: #667085; }
+html:not([data-theme="dark"]) .table-person small { color: #667085; }
+html:not([data-theme="dark"]) td small { color: #667085; }
+html:not([data-theme="dark"]) .timeoff-row > span:nth-of-type(2) { color: #667085; }
+html:not([data-theme="dark"]) .timeoff-row > small { color: #667085; }
+html:not([data-theme="dark"]) .plate-number { color: #667085; }
+html:not([data-theme="dark"]) .fleet-specs small { color: #667085; }
+html:not([data-theme="dark"]) .fleet-specs b span { color: #667085; }
+html:not([data-theme="dark"]) .fleet-notes { color: #667085; }
+html:not([data-theme="dark"]) .fleet-tip p { color: #667085; }
+html:not([data-theme="dark"]) .route-arrow { color: #667085; }
+html:not([data-theme="dark"]) .detail-section small { color: #667085; }
+html:not([data-theme="dark"]) .detail-two-up small { color: #667085; }
+html:not([data-theme="dark"]) .record-list span { color: #667085; }
+html:not([data-theme="dark"]) .detail-section p { color: #667085; }
+html:not([data-theme="dark"]) .detail-two-up p { color: #667085; }
+html:not([data-theme="dark"]) .activity-item small { color: #667085; }
+html:not([data-theme="dark"]) .tip-card p { color: #667085; }
+html:not([data-theme="dark"]) .history-search { color: #667085; }
+html:not([data-theme="dark"]) .history-assignment small { color: #667085; }
+html:not([data-theme="dark"]) .history-status { color: #667085; }
+html:not([data-theme="dark"]) .status-breakdown-row small { color: #667085; }
+html:not([data-theme="dark"]) .destination-rank { color: #667085; }
+html:not([data-theme="dark"]) .destination-row span:last-child { color: #667085; }
+html:not([data-theme="dark"]) .workload-name small { color: #667085; }
+html:not([data-theme="dark"]) .report-notes p { color: #667085; }
+html:not([data-theme="dark"]) .settings-form small { color: #667085; }
+html:not([data-theme="dark"]) .security-note p { color: #667085; }
+html:not([data-theme="dark"]) .security-note li { color: #667085; }
+html:not([data-theme="dark"]) .guide-step p { color: #667085; }
+html:not([data-theme="dark"]) .guide-aside p { color: #667085; }
+html:not([data-theme="dark"]) .notification-copy p { color: #667085; }
+html:not([data-theme="dark"]) .notification-copy small { color: #667085; }
+html:not([data-theme="dark"]) .reminder-settings > p { color: #667085; }
+html:not([data-theme="dark"]) .reminder-settings > small { color: #667085; }
+html:not([data-theme="dark"]) .login-foot { color: #667085; }
+
+/* ---- 3. Touch, safe-area and iOS behaviour ---- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: 84px; scroll-padding-bottom: 150px; }
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+button, a, select, summary, label.driver-option { touch-action: manipulation; }
+a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 3px solid rgba(102, 93, 242, .5); outline-offset: 2px; }
+html[data-theme="dark"] :is(a, button, summary, select, [tabindex]):focus-visible { outline-color: rgba(147, 139, 255, .7); }
+
+.icon { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.2em; }
+.nav-icon { display: grid; place-items: center; }
+.nav-icon .icon { width: 20px; height: 20px; }
+.help-icon, .tip-icon { font-size: 15px; }
+.mobile-bottom-nav .icon { width: 24px; height: 24px; }
+.mobile-bottom-nav > .mobile-new-trip > span .icon { width: 20px; height: 20px; stroke-width: 2.2; }
+.mobile-menu-link > span .icon { width: 20px; height: 20px; }
+
+@supports (min-height: 100dvh) {
+  .app-frame, .app-main, .login-screen, .error-screen { min-height: 100dvh; }
+  .sidebar { height: 100dvh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Installed to the Home Screen: keep the header clear of the status bar. */
+@media (display-mode: standalone) {
+  .topbar { box-sizing: border-box; height: auto; min-height: calc(60px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); }
+}
+
+/* Phones and iPads: bottom bar, sticky save buttons, safe-area padding. */
+@media screen and (max-width: 1100px) {
+  .topbar { -webkit-backdrop-filter: blur(14px); }
+  .mobile-bottom-nav { padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); -webkit-backdrop-filter: blur(14px); }
+  .form-actions { position: sticky; z-index: 12; bottom: calc(66px + env(safe-area-inset-bottom)); margin-top: 6px; padding: 12px 0; background: linear-gradient(to top, var(--paper) 72%, transparent); }
+  .calendar-surface { scroll-snap-type: x proximity; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .period-column { scroll-snap-align: start; }
+}
+
+/* Any touch screen. */
+@media (pointer: coarse) {
+  input, select, textarea { font-size: 16px !important; }
+  input[type="checkbox"], input[type="radio"] { width: 22px; height: 22px; }
+  .button, .small-button, .action-button, .today-button, .clear-filter, .top-add { min-height: 44px; }
+  .icon-button, .theme-toggle, .notification-bell, .calendar-arrow, .icon-link { min-width: 44px; min-height: 44px; }
+  .text-link, .text-button { display: inline-flex; align-items: center; min-height: 44px; padding-top: 0; padding-bottom: 0; }
+  .view-switch button { min-height: 40px; }
+  .nav-link { min-height: 48px; }
+  .driver-option { min-height: 56px; }
+  .month-cell { min-height: 72px; }
+  .button:active, .nav-link:active, .quick-action:active, .mobile-menu-link:active, .calendar-trip:active, .upcoming-row:active { opacity: .78; }
+}
+
+/* ---- 4. Loading skeleton ---- */
+.loading-skeleton { display: flex; flex-direction: column; gap: 14px; }
+.skeleton { border-radius: 14px; background: linear-gradient(90deg, var(--line) 25%, rgba(255, 255, 255, .6) 50%, var(--line) 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite; }
+html[data-theme="dark"] .skeleton { background-image: linear-gradient(90deg, var(--line) 25%, rgba(255, 255, 255, .07) 50%, var(--line) 75%); }
+.skeleton-title { width: min(60%, 320px); height: 34px; }
+.skeleton-line { width: min(80%, 460px); height: 16px; }
+.skeleton-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.skeleton-card { height: 104px; }
+.skeleton-panel { height: 280px; }
+@keyframes skeleton-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (max-width: 760px) { .skeleton-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---- 5. Trip form: busy / on-leave hints ---- */
+.driver-option .driver-option-copy small.option-busy { color: #b54360; font-weight: 700; }
+html[data-theme="dark"] .driver-option .driver-option-copy small.option-busy { color: #f0a1b4; }
+
+/* ---- 6. Calendar: agenda list view ---- */
+.view-switch { max-width: 100%; }
+@media (max-width: 760px) { .view-switch { grid-template-columns: repeat(4, 1fr); } }
+.agenda-surface { min-height: 0; padding: 6px 14px 14px; overflow: visible; }
+.agenda { display: flex; flex-direction: column; }
+.agenda-day { padding-top: 8px; }
+.agenda-day-heading { display: flex; align-items: center; gap: 8px; margin: 10px 0 8px; color: var(--muted); font: 700 12px "Manrope Variable", Manrope, sans-serif; letter-spacing: .05em; text-transform: uppercase; }
+.agenda-day-heading.is-today { color: var(--primary); }
+.agenda-today { padding: 2px 8px; border-radius: 999px; background: var(--primary-wash); color: var(--primary); font-size: 10px; letter-spacing: .04em; }
+.agenda-trip { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 68px; margin-bottom: 8px; padding: 10px 12px; border: 1px solid var(--line); border-left: 4px solid #dfa347; border-radius: 12px; background: var(--paper); }
+.agenda-trip.confirmed { border-left-color: #42ad91; }
+.agenda-trip.in_progress { border-left-color: #786df4; }
+.agenda-trip.completed { border-left-color: #a0a9b8; }
+.agenda-trip.cancelled { border-left-color: #db8196; opacity: .65; }
+.agenda-time { display: flex; flex-direction: column; gap: 2px; }
+.agenda-time b { font-size: 14px; }
+.agenda-time small, .agenda-copy small { color: var(--muted); font-size: 12px; }
+.agenda-time small, .agenda-time b { white-space: nowrap; }
+.agenda-copy { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.agenda-copy b { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.agenda-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 520px) { .agenda-trip { grid-template-columns: 84px minmax(0, 1fr); } .agenda-trip .status-badge { display: none; } }
+
+/* ---- 7. Trip details: tap-to-call, maps, share ---- */
+.route-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 8px 0 0; font-size: 13px; }
+.route-links > span { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-weight: 700; }
+.route-links > span:not(:first-child) { margin-left: 8px; }
+.route-links a, .contact-link { color: var(--primary); font-weight: 700; }
+.route-links a { display: inline-flex; align-items: center; min-height: 32px; }
+.contact-link { display: inline-flex !important; align-items: center; gap: 5px; min-height: 32px; }
+.assigned-person small .contact-link { font-size: 12px; }
+.detail-actions .button .icon { margin-right: 2px; }
+@media (pointer: coarse) { .route-links a, .contact-link { min-height: 44px; } }
+
+/* ---- 8. Invoices: share actions, mark paid, export ---- */
+.page-heading-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.invoice-detail-actions { align-items: center; }
+.invoice-detail-actions .button .icon, .invoice-card-actions .button .icon, .invoice-update-panel .button .icon { margin-right: 2px; }
+.share-note { flex-basis: 100%; color: var(--muted); font-size: 13px; }
+.invoice-update-panel { flex-wrap: wrap; }
+.invoice-update-panel > form { display: flex; align-items: center; }
+@media (max-width: 760px) {
+  .page-heading-actions { width: 100%; }
+  .page-heading-actions > .button, .page-heading-actions > a.button { flex: 1 1 auto; }
+  .invoice-detail-actions > .button { flex: 1 1 calc(50% - 8px); }
+  .invoice-card-actions > form:not(.invoice-status-form) .button { width: 100%; }
+}
+@media print { .share-note, .page-heading-actions { display: none !important; } }
+@media print { .breadcrumbs, .notice, .invoice-detail-heading, .calendar-legend, .mobile-bottom-nav { display: none !important; } }
+
+/* ---- 9. Phone calendar header: arrows, Today, and the date range share one row ---- */
+@media (max-width: 760px) {
+  .calendar-controls { grid-template-columns: 44px auto 44px minmax(0, 1fr); }
+  .calendar-period { grid-column: auto; min-width: 0; text-align: left; font-size: 15px; line-height: 1.25; padding-left: 4px; }
+  .filter-row .toolbar-spacer { display: none; }
+  .filter-row .action-button { grid-column: span 1; }
+}

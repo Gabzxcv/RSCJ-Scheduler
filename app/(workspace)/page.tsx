@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   ]);
   const timezone = settings.data?.timezone || DEFAULT_TIMEZONE;
   const today = dateKey(new Date(), timezone);
-  const now = Date.now();
+  const now = new Date().getTime();
   const todayTrips = trips.filter((trip) => dateKey(trip.starts_at, timezone) === today && trip.status !== "cancelled").sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   const activeToday = todayTrips.filter((trip) => ["confirmed", "in_progress"].includes(trip.status));
   const onLeave = new Set(availability.filter((item) => new Date(item.starts_at).getTime() <= now && new Date(item.ends_at).getTime() > now).map((item) => item.driver_id));
